@@ -1,6 +1,6 @@
 # Open AIQ Documentation
 
-Unified documentation for the Open AIQ hardware and software ecosystem, built with Astro Starlight and deployed to GitHub Pages at <https://open-aiq.github.io/docs/>.
+Unified documentation for the Open AIQ hardware and software ecosystem, built with Astro Starlight and deployed to GitHub Pages at <https://docs.air-iq.net/>.
 
 ## Development
 

@@ -3,8 +3,7 @@ import { defineConfig } from 'astro/config'
 import starlightOpenAPI, { openAPISidebarGroups } from 'starlight-openapi'
 
 export default defineConfig({
-  site: 'https://open-aiq.github.io',
-  base: '/docs',
+  site: 'https://docs.air-iq.net',
   integrations: [
     starlight({
       title: 'Open AIQ',

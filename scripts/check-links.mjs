@@ -17,8 +17,8 @@ for (const file of htmlFiles) {
     const value = match[1]
     if (/^(?:https?:|mailto:|tel:|data:|#)/.test(value)) continue
     const clean = value.split(/[?#]/)[0]
-    let target = clean.startsWith('/docs/')
-      ? join(root, clean.slice('/docs/'.length))
+    let target = clean.startsWith('/')
+      ? join(root, clean.slice(1))
       : resolve(dirname(file), clean)
     if (clean.endsWith('/')) target = join(target, 'index.html')
     else if (!extname(target)) target = join(target, 'index.html')
