@@ -1,0 +1,29 @@
+name: Validate documentation
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out documentation
+        uses: actions/checkout@v7
+      - name: Use Node.js 24
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Check backend API snapshot
+        run: npm run check:api
+      - name: Validate and build
+        run: npm run validate
+      - name: Check for accidentally committed secrets
+        run: |
+          test -z "$(find . -path ./node_modules -prune -o -path ./.git -prune -o \( -name .env -o -name secrets.h -o -name '*.dump' \) -print)"

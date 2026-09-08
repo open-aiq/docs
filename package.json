@@ -1,0 +1,31 @@
+{
+  "name": "@open-aiq/docs",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": "24.x"
+  },
+  "scripts": {
+    "dev": "astro dev",
+    "check": "astro check",
+    "validate": "npm run check && npm run build && node scripts/check-links.mjs",
+    "build": "astro build",
+    "preview": "astro preview",
+    "sync:api": "node scripts/sync-api.mjs",
+    "check:api": "node scripts/check-api-drift.mjs"
+  },
+  "dependencies": {
+    "@astrojs/starlight": "0.42.0",
+    "@fontsource-variable/geist": "5.2.9",
+    "astro": "7.3.1",
+    "starlight-openapi": "0.26.2"
+  },
+  "devDependencies": {
+    "@astrojs/check": "0.9.6",
+    "typescript": "5.9.3"
+  },
+  "overrides": {
+    "form-data": "4.0.6"
+  }
+}

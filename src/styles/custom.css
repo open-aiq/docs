@@ -1,0 +1,29 @@
+@import '@fontsource-variable/geist';
+
+:root {
+  --sl-font: 'Geist Variable', system-ui, sans-serif;
+  --sl-color-accent-low: #dbeafe;
+  --sl-color-accent: #2563eb;
+  --sl-color-accent-high: #172554;
+  --sl-color-text-accent: #1d4ed8;
+}
+
+:root[data-theme='dark'] {
+  --sl-color-accent-low: #172554;
+  --sl-color-accent: #60a5fa;
+  --sl-color-accent-high: #dbeafe;
+  --sl-color-text-accent: #93c5fd;
+}
+
+.hero {
+  background:
+    radial-gradient(circle at 12% 20%, color-mix(in srgb, var(--sl-color-accent) 18%, transparent), transparent 34%),
+    radial-gradient(circle at 88% 30%, color-mix(in srgb, #22c55e 14%, transparent), transparent 30%);
+  border-radius: 1.5rem;
+}
+
+.card-grid .card {
+  border-top: 3px solid color-mix(in srgb, var(--sl-color-accent) 75%, #22c55e);
+}
+
+.site-title { letter-spacing: -0.025em; }

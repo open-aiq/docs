@@ -1,0 +1,34 @@
+---
+title: Open AIQ
+description: Open hardware and software for understanding the air around you.
+template: splash
+hero:
+  tagline: Build a sensor, provision it over BLE, and turn local readings into a clear, privacy-aware dashboard.
+  actions:
+    - text: Get started
+      link: /docs/quick-start/
+      icon: right-arrow
+    - text: View on GitHub
+      link: https://github.com/open-aiq
+      icon: external
+      variant: minimal
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+<CardGrid>
+  <Card title="Open from sensor to screen" icon="seti:config">
+    ESP32 firmware, a Go API, a React dashboard, and a Flutter provisioning client live in public repositories.
+  </Card>
+  <Card title="Useful data, understandable context" icon="analytics">
+    Track PM1.0, PM2.5, PM10, temperature, humidity, heat index, and US EPA AQI over time.
+  </Card>
+  <Card title="Private by default" icon="padlock">
+    Device readings and exact location stay private until an owner explicitly enables public sharing.
+  </Card>
+  <Card title="Built to be changed" icon="puzzle">
+    Reproduce the stack locally, inspect every contract, and contribute to whichever layer interests you.
+  </Card>
+</CardGrid>
+
+Open AIQ is pre-1.0. Start with the [quick start](./quick-start/), learn how the pieces fit in the [architecture guide](./architecture/), or browse the generated [API reference](./api/).
