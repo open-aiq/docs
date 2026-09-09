@@ -25,4 +25,5 @@ Generate Swagger in a local backend checkout, then copy it deterministically:
 npm run sync:api -- ../backend/docs/swagger.yaml
 ```
 
-Generated endpoint pages use the committed Swagger 2.0 snapshot. CI checks that it matches `open-aiq/backend` main.
+Generated endpoint pages use the committed Swagger 2.0 snapshot. The same command synchronizes the
+generated RFC 9457 problem catalog. CI checks both artifacts against `open-aiq/backend` main.

@@ -1,0 +1,51 @@
+---
+title: API errors
+description: RFC 9457 error responses and validation details returned by Open AIQ.
+---
+
+import ProblemCatalog from "../../../components/ProblemCatalog.astro";
+
+Open AIQ errors use [RFC 9457 Problem Details](https://www.rfc-editor.org/rfc/rfc9457.html)
+and the `application/problem+json` media type. Clients should branch on `type`, `status`, and
+structured extensions rather than parsing the human-readable `detail` string.
+
+```json
+{
+  "type": "https://docs.air-iq.net/reference/errors/#validation-error",
+  "title": "Request validation failed",
+  "status": 422,
+  "detail": "One or more request values are invalid.",
+  "instance": "/api/v1/devices",
+  "errors": [
+    {
+      "in": "body",
+      "name": "name",
+      "code": "required",
+      "detail": "name is required"
+    }
+  ]
+}
+```
+
+## Problem fields
+
+| Field      | Meaning                                                                       |
+| ---------- | ----------------------------------------------------------------------------- |
+| `type`     | Stable identifier and link to the problem category below.                     |
+| `title`    | Short title shared by every occurrence of that type.                          |
+| `status`   | HTTP status, repeated in the body for persisted responses and tooling.        |
+| `detail`   | Safe, occurrence-specific guidance intended for a person.                     |
+| `instance` | Request path for this occurrence; query strings and credentials are excluded. |
+| `errors`   | Optional list identifying invalid inputs.                                     |
+
+Each item in `errors` has an `in` location (`body`, `query`, or `path`), an input `name`, a
+stable `code`, and a human-readable `detail`. A response can contain more than one violation.
+
+Malformed JSON returns `400`; oversized content returns `413`; unsupported request media types
+return `415`; and well-formed input that violates the endpoint contract returns `422`.
+
+## Problem types
+
+The following catalog is generated from the same Go registry used to produce runtime responses.
+
+<ProblemCatalog />

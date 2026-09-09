@@ -6,6 +6,7 @@ description: Authentication and usage conventions for the generated endpoint ref
 The generated [API reference](../../api/) is authoritative for routes, parameters, payload schemas, and response codes. It is built from `backend/docs/swagger.yaml` and served below `/api/`.
 
 The API base path is `/api/v1`. JSON request bodies use `Content-Type: application/json`.
+Errors use [RFC 9457 Problem Details](../errors/) with the `application/problem+json` media type.
 
 ## Owner authentication
 

@@ -1,0 +1,16 @@
+---
+import problems from '../assets/openapi/problems.json'
+---
+
+{problems.map((problem) => (
+  <section id={problem.slug}>
+    <h2>{problem.title}</h2>
+    <dl>
+      <dt>Type</dt>
+      <dd><a href={problem.type}><code>{problem.type}</code></a></dd>
+      <dt>Default status</dt>
+      <dd><code>{problem.status}</code></dd>
+    </dl>
+    <p>{problem.description}</p>
+  </section>
+))}
