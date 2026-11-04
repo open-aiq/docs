@@ -1,28 +1,77 @@
 ---
-title: Firmware setup and build
-description: Configure and compile firmware for the ESP32 monitor.
+title: Firmware setup
+description: Flash a release image or build the Rust firmware from source.
 ---
 
-Install PlatformIO, clone `open-aiq/aqs-device`, then create the ignored secrets file:
+The firmware lives in [`open-aiq/device`](https://github.com/open-aiq/device).
+It is Rust on ESP-IDF for the ESP32-S3.
+
+## Flash a release
+
+Each [firmware release](../../releases/) has two images per OLED controller:
+
+| File | Use |
+| --- | --- |
+| `airmonitor-<version>-<oled>-full.bin` | First USB flash: bootloader, partition table, and app, written at `0x0` |
+| `airmonitor-<version>-<oled>-ota.bin` | App image only, used for over-the-air updates |
 
 ```bash
-cp include/secrets.example.h include/secrets.h
-pio run
+espflash write-bin 0x0 airmonitor-v0.3.0-sh1106-full.bin
 ```
 
-`include/secrets.h` contains local development values for Wi-Fi, device credentials, and mock coordinates. Never commit it. The production backend base URL is defined by `BACKEND_BASE_URL` in `include/config.h` and can be overridden with a PlatformIO build flag.
+Check the file against `SHA256SUMS` first. After the first flash, updates
+arrive [over the air](../ota/).
 
-Uploading and serial monitoring require attached hardware and are explicit actions:
+## Build from source
+
+You need the Xtensa Rust toolchain from
+[espup](https://github.com/esp-rs/espup) and
+[espflash](https://github.com/esp-rs/espflash). `rust-toolchain.toml` selects
+the `esp` toolchain.
 
 ```bash
-pio run -t upload
-pio device monitor
+make help                            # every command
+make build                           # release build for the default SH1106 OLED
+make build OLED_CONTROLLER=ssd1306
+make verify                          # format, host tests, Clippy, both OLED builds
+make flash                           # build, flash with partitions + rollback bootloader, monitor
+make monitor                         # serial monitor only
 ```
 
-The monitor uses 9600 baud. `make build` wraps the normal build. `make merge` produces a combined flash image. Release targets create/push tags and publish GitHub releases; run them only with explicit maintainer intent and validated `VERSION`/release notes.
+Always flash with `make flash`. Plain `espflash flash` replaces the A/B
+partition table and the rollback bootloader with espflash's defaults.
 
-## Mock provisioning
+The backend URL defaults to `https://api.air-iq.net/api/v1`. To use another
+backend, set `BACKEND_BASE_URL` at build time. HTTPS uses ESP-IDF's built-in
+certificate bundle.
 
-For development, compile with `MOCK_APP_PROVISIONING=1`. On the first boot with empty flash, firmware copies values from `secrets.h` into persistent configuration. BLE remains active and can overwrite them.
+## Serial console
 
-Mock provisioning does not rerun after configuration exists. Send `CLEAR`, or temporarily compile with `WIPE_CONFIG_ON_BOOT=1`. Restore both flags to `0` afterward; otherwise every reboot discards provisioning.
+With `make monitor` open, type a line and press Enter to stand in for the
+buttons:
+
+| Line | Same as |
+| --- | --- |
+| `BTN:PAIR` | Holding both buttons for 3 s |
+| `BTN:LEFT` / `BTN:RIGHT` | Left / right button |
+| `BTN:HELP` | Lists these commands |
+
+## Development provisioning
+
+A development build can seed empty storage without the app:
+
+```bash
+MOCK_WIFI_SSID=... MOCK_WIFI_PASSWORD=... \
+MOCK_DEVICE_ID=dev_... MOCK_DEVICE_KEY=sk_... \
+MOCK_LAT=24.8607 MOCK_LON=67.0011 make build
+```
+
+The values are compiled into that binary, so never share or release it.
+`WIPE_CONFIG_ON_BOOT=1` erases storage on every boot and is only for a
+deliberate reset build.
+
+## Releases
+
+Maintainers run `make release` on a clean `main`. It checks the
+[version registry](../../releases/), runs `make verify`, builds both images for
+both OLED controllers, tags the version, and publishes a GitHub release.

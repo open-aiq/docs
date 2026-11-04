@@ -11,42 +11,59 @@ Requires Go 1.26+, PostgreSQL, and the tools named in its README. Copy `.env.exa
 
 ```bash
 make help
-make swagger
+make init
+make swagger:gen
 make build
-go test ./...
+make verify
 ```
 
-Edit Ent schemas under `internal/platform/ent/schema/` and regenerate via the owning Make target. Database start, migration application, seeding, cleanup, and release targets modify external or persistent state—review and run them deliberately.
+Edit Ent schemas under `internal/platform/ent/schema/` and regenerate via the owning Make target. The Docker image applies pending migrations when the container starts; locally, apply them with `make migration:apply`. Database start, seeding, cleanup, and release targets change persistent state, so run them deliberately.
 
 ## Frontend
 
 Configure `VITE_API_URL` and `VITE_CLERK_PUBLISHABLE_KEY` from `.env.example`, then:
 
 ```bash
-npm ci
-npm run dev
-npm run lint
-npm test
-npm run build
+make init
+make dev
+make verify     # format check, lint, tests, build
 ```
 
 Keep backend CORS/Clerk origins synchronized. Add shadcn primitives with its CLI rather than recreating them.
 
-## Flutter app
+## Mobile app
 
-The provisioning app is currently WIP.
+Requires Flutter and a phone; Bluetooth doesn't work in simulators.
 
 ```bash
-flutter pub get
-flutter analyze
-flutter test
+make init
+make dev        # runs against the backend on this machine
+make verify     # format check, analyze, tests
 ```
 
-When implementing provisioning, keep UUIDs, commands, response framing, chunk buffering, and secret handling synchronized with firmware `src/ble.cpp`.
+Keep BLE UUIDs, commands, reply framing, and notification reassembly in
+`lib/ble/protocol.dart` in sync with the firmware. The tests run the protocol
+and provisioning flow against an in-memory device emulator.
 
 ## Device firmware
 
-Copy the secrets template locally, then run `pio run` or `make build`. Do not commit `secrets.h`. Upload, serial monitor, tag, and release operations need hardware or external authorization and should never be part of an incidental verification run.
+Requires the Xtensa Rust toolchain ([espup](https://github.com/esp-rs/espup))
+and [espflash](https://github.com/esp-rs/espflash).
+
+```bash
+make build
+make verify     # format, host tests, Clippy, both OLED builds
+```
+
+Flashing (`make flash`) needs attached hardware. Never commit or share a
+binary built with `MOCK_*` values. See [Firmware setup](../device/firmware/).
+
+## Releases
+
+Every repository releases with `make release` from a clean `main`. Each one
+checks the [version registry](../releases/) first: a new major or minor version
+must be registered in this docs repository before it can be released. Tagging
+and publishing a release are deliberate maintainer actions.
 
 ## Documentation
 

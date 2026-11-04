@@ -1,30 +1,42 @@
 ---
 title: Quick start
-description: Choose the shortest path to explore or develop Open AIQ.
+description: The shortest paths to explore, run, or build Open AIQ.
 ---
 
 ## Explore the product
 
-Open the public dashboard at [openaiq.org](https://openaiq.org), browse the community map, or sign in to manage your devices. Public device pages expose only devices opted into public readings; map markers additionally require location-sharing consent.
+Open the dashboard at [open-airiq.web.app](https://open-airiq.web.app) to browse
+the community map, or sign in to manage your monitors. Public device pages show
+only monitors whose owners made their readings public. The map also requires
+location sharing.
 
 ## Run the software locally
 
-Clone the repositories you need from the [Open AIQ GitHub organization](https://github.com/open-aiq). Each repository has its own dependencies and history.
+Clone the repositories you need from the
+[Open AIQ GitHub organization](https://github.com/open-aiq). Each one runs
+`make help` to list its commands.
 
-1. Start PostgreSQL and configure the Go backend from `backend/.env.example`.
-2. Run the backend and set the frontend’s `VITE_API_URL` to its `/api/v1` URL.
-3. Configure Clerk keys and matching authorized origins in both projects.
-4. Run the React dashboard with `npm run dev`.
+1. **Backend:** copy `.env.example` to `.env` and fill it in, then
+   `make init`, `make db:up` and `make dev`.
+2. **Dashboard:** copy `.env.example`, point `VITE_API_URL` at the backend's
+   `/api/v1` URL, then `make init` and `make dev`.
+3. **Mobile app:** with a phone connected, `make init` and `make dev`. It
+   targets the backend running on your machine.
 
-See [contributor setup](../contributing/) for exact commands.
+Use the same Clerk instance in all three, and list the dashboard's origin in
+the backend's `CLERK_AUTHORIZED_PARTIES` and `CORS_ALLOWED_ORIGINS`. See
+[contributor setup](../contributing/) for details.
 
 ## Bring up a monitor
 
-Wire the [supported hardware](../device/hardware/), copy `include/secrets.example.h` to the ignored `include/secrets.h`, and build with PlatformIO. Register a device in the dashboard and save the returned key immediately—it is shown only once.
+1. Build the [reference hardware](../device/hardware/): an ESP32-S3 board,
+   PMS5003, SHT30, a 128×64 OLED, and two buttons.
+2. Flash it once over USB, either the `-full.bin` image from the latest
+   [firmware release](../releases/) or [from source](../device/firmware/) with
+   `make flash`.
+3. In the mobile app, choose **Add monitor**, hold both buttons for 3 seconds,
+   and enter the 6-digit code shown on the screen. The app registers the monitor,
+   sends Wi-Fi and location, and waits for the first reading.
 
-Until the Flutter provisioning workflow is complete, choose one of these development paths:
-
-- Set `MOCK_APP_PROVISIONING=1` for the first boot of an empty flash configuration.
-- Use a generic Nordic UART BLE client to send the [provisioning commands](../device/ble/).
-
-Firmware upload changes attached hardware and is intentionally not part of the automatic setup.
+No phone? You can [register in the dashboard](../dashboard/register-device/)
+and provision with any Nordic UART BLE client after passkey pairing.

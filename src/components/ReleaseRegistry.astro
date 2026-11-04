@@ -22,7 +22,7 @@ type Release = {
   assets: Asset[]
 }
 type Component = { name: string; repo: string; links?: { label: string; url: string }[] }
-type Entry = { version: string; info?: string; tag?: string }
+type Entry = { version: string; info?: string; tag?: string; date?: string }
 type Line = {
   line: string
   status: string
@@ -72,7 +72,7 @@ const newestFirst = (a: string, b: string) => {
 const size = (bytes: number) =>
   bytes >= 1024 * 1024 ? `${(bytes / 1024 / 1024).toFixed(1)} MB` : `${Math.max(1, Math.round(bytes / 1024))} KB`
 
-type Item = { version: string; info?: string; tagUrl: string; release?: Release }
+type Item = { version: string; info?: string; date?: string; tagUrl: string; release?: Release }
 
 // The registry's entries plus any GitHub release in the same major.minor.
 function itemsFor(line: Line, key: string): Item[] | undefined {
@@ -87,6 +87,7 @@ function itemsFor(line: Line, key: string): Item[] | undefined {
     items.set(entry.version, {
       version: entry.version,
       info: entry.info,
+      date: release?.published_at.slice(0, 10) ?? entry.date,
       release,
       tagUrl: `https://github.com/${repo}/tree/${tag}`,
     })
@@ -94,7 +95,7 @@ function itemsFor(line: Line, key: string): Item[] | undefined {
   for (const release of fromGitHub) {
     const version = bare(release.tag_name)
     if (!items.has(version)) {
-      items.set(version, { version, release, tagUrl: `https://github.com/${repo}/tree/${release.tag_name}` })
+      items.set(version, { version, release, date: release.published_at.slice(0, 10), tagUrl: `https://github.com/${repo}/tree/${release.tag_name}` })
     }
   }
   return [...items.values()].sort((a, b) => newestFirst(a.version, b.version))
@@ -123,7 +124,7 @@ for (const line of [...lines].sort((a, b) => newestFirst(a.line, b.line))) {
         <table>
           <thead>
             <tr>
-              <th scope="col">Version family</th>
+              <th scope="col">Version</th>
               {COLUMNS.map((column) => (
                 <th scope="col">{column.label}</th>
               ))}
@@ -145,16 +146,16 @@ for (const line of [...lines].sort((a, b) => newestFirst(a.line, b.line))) {
                       {items.length === 0 && <span class="muted">Not released</span>}
                       {items.map((item) => (
                         <details>
-                          <summary>
+                          <summary title={item.info}>
                             <code>{item.version}</code>
-                            {item.info && <span>{item.info}</span>}
+                            {item.date && <time datetime={item.date}>{item.date}</time>}
                           </summary>
                           <div class="detail">
+                            {item.info && <p class="info">{item.info}</p>}
                             {item.release ? (
                               <>
                                 <p>
-                                  {item.release.published_at.slice(0, 10)}
-                                  {item.release.prerelease && ' · pre-release'} ·{' '}
+                                  {item.release.prerelease && 'Pre-release · '}
                                   <a href={item.release.html_url}>Release notes</a>
                                 </p>
                                 {item.release.assets.length > 0 ? (
@@ -217,14 +218,14 @@ for (const line of [...lines].sort((a, b) => newestFirst(a.line, b.line))) {
   .release-registry table {
     display: table;
     width: 100%;
-    min-width: 38rem;
+    min-width: 42rem;
     table-layout: fixed;
     font-size: var(--sl-text-sm);
   }
   .release-registry th,
   .release-registry td {
     vertical-align: top;
-    padding: 0.5rem 0.625rem;
+    padding: 0.4rem 0.5rem;
   }
   .release-registry thead th {
     font-size: var(--sl-text-xs);
@@ -234,7 +235,7 @@ for (const line of [...lines].sort((a, b) => newestFirst(a.line, b.line))) {
   }
   .release-registry thead th:first-child,
   .release-registry tbody th {
-    width: 7.5rem;
+    width: 5.5rem;
   }
   .release-registry h3 {
     display: flex;
@@ -262,22 +263,30 @@ for (const line of [...lines].sort((a, b) => newestFirst(a.line, b.line))) {
     margin: 0;
   }
   .release-registry details + details {
-    margin-top: 0.25rem;
+    margin-top: 0.1rem;
   }
   .release-registry summary {
     cursor: pointer;
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: 0.25rem 0.4rem;
-    list-style-position: outside;
+    white-space: nowrap;
+    font-size: var(--sl-text-xs);
+    line-height: 1.6;
+  }
+  .release-registry summary code {
+    font-size: inherit;
+    padding: 0 0.25rem;
+  }
+  .release-registry summary time {
+    margin-inline-start: 0.35rem;
+    color: var(--sl-color-gray-3);
+    font-variant-numeric: tabular-nums;
   }
   .release-registry summary::marker,
   .release-registry summary::-webkit-details-marker {
     color: var(--sl-color-gray-4);
   }
-  .release-registry summary span {
-    color: var(--sl-color-gray-2);
+  .release-registry .detail .info {
+    color: var(--sl-color-white);
+    font-weight: 500;
   }
   .release-registry .detail {
     margin: 0.25rem 0 0.5rem;

@@ -1,19 +1,39 @@
 ---
 title: Data, credentials, and security
-description: Authentication boundaries, location handling, and current limitations.
+description: Authentication boundaries, transport security, and handling secrets.
 ---
 
-Open AIQ has two authentication boundaries:
+## Who can call what
 
-- Dashboard owner routes use a Clerk session token in `Authorization: Bearer …`. The backend verifies the token and authorized-party origin, then scopes queries to the Clerk user ID.
-- Hardware ingestion uses `X-Device-ID` and `X-Device-Key`. The ID identifies a monitor; the key is a secret shown once at registration or rotation.
+| Caller | Credential | Scope |
+| --- | --- | --- |
+| Dashboard | Clerk session token, `Authorization: Bearer …` | The signed-in owner's devices. The token's origin (`azp`) must be in `CLERK_AUTHORIZED_PARTIES`. |
+| Mobile app | Clerk session token | Same as the dashboard. Mobile tokens have no origin and are accepted when `CLERK_ALLOW_NATIVE_CLIENTS=true`. |
+| Monitor | `X-Device-ID` + `X-Device-Key` | Its own readings, logs, and update job |
+| Release pipeline | `Authorization: Bearer <FIRMWARE_PUBLISH_TOKEN>` | Publishing firmware releases only |
+| Anyone | none | Public device pages and the map, only for devices an owner made public |
 
-Public endpoints require neither credential. They expose only devices an owner has made public. Exact location additionally requires explicit location sharing.
+The device ID (`dev_…`) is public. The device key (`sk_…`) is a secret shown
+once, when the device is created or its key is rotated. When the app registers a
+monitor, it sends the key straight to the monitor over the encrypted Bluetooth
+link and never displays it.
 
-Keep `.env`, `include/secrets.h`, Clerk secret keys, device keys, database dumps, and release credentials out of Git. Browser-side Clerk publishable keys are designed to be public; backend Clerk secret keys are not. Logs redact authorization and device-key headers, but contributors should still avoid printing request headers.
+## Transport
 
-## Current limitations
+- **Device to backend.** HTTPS with certificate verification against ESP-IDF's
+  built-in CA bundle.
+- **Phone to device.** Bluetooth LE Secure Connections with passkey entry. Every
+  command requires an encrypted, authenticated link. Bluetooth is off unless the
+  owner holds both buttons, and each pairing window gets a new random 6-digit
+  passkey that appears only on the monitor. See [BLE provisioning](../../device/ble/).
+- **Firmware updates.** Images download over HTTPS and must match the published
+  SHA-256 and size. Only owner-approved updates install, and a failing image
+  rolls back. See [Firmware updates](../../device/ota/).
 
-ESP32 HTTPS currently calls `setInsecure()`, which encrypts traffic but does not authenticate the server certificate. A network attacker able to intercept TLS could capture device credentials or readings. Certificate validation/pinning remains required before treating the transport as hardened.
+## Keeping secrets out of Git
 
-The reference partition has no OTA update slot. Physical reflashing is required. BLE provisioning also has no application-level authorization described by the current protocol; provision in a trusted physical environment.
+Never commit `.env` files, Clerk secret keys, device keys, firmware built with
+`MOCK_*` values, database dumps, signing keystores, or release tokens. Clerk
+*publishable* keys are designed to be public. The backend redacts authorization
+and device-key headers in its logs, and the firmware never logs secrets,
+because device logs are uploaded.

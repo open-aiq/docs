@@ -16,6 +16,6 @@ Open AIQ presents the US EPA Air Quality Index as a whole number and labels it w
 
 Color is accompanied by a category label so meaning does not depend on color alone. Particulate concentrations (PM1.0, PM2.5, PM10) are expressed in micrograms per cubic metre (`µg/m³`). Temperature is Celsius, humidity is percent relative humidity, and heat index is Celsius.
 
-Firmware computes AQI from particulate measurements. For upload windows it averages concentrations first, then recomputes AQI rather than averaging AQI numbers. The backend current view averages stored readings from the last hour. Historical views bucket records according to the requested timeline.
+Firmware computes a US EPA sub-index for PM2.5 and for PM10 and reports the higher one. For each 10-minute upload it averages the concentrations first, then recomputes AQI, rather than averaging AQI numbers. The backend current view averages stored readings from the last hour. Historical views bucket records according to the requested timeline.
 
 Consumer sensors, placement, airflow, humidity, calibration, and local conditions all affect results. Do not treat Open AIQ as a certified regulatory monitor or use it as the sole basis for medical or emergency decisions.

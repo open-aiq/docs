@@ -25,4 +25,24 @@ Enable both public readings and public location, then ensure the newest complete
 
 ## BLE responses look truncated
 
-Notifications are split into chunks of at most 20 bytes. Buffer bytes until a newline before interpreting a response.
+Notifications are split into chunks of up to `MTU - 3` bytes (20 at the default MTU). Buffer bytes until a newline before interpreting a response.
+
+## The app cannot find or pair with the monitor
+
+- BLE only advertises in pairing mode. Hold both buttons for 3 seconds (or type
+  `BTN:PAIR` on the serial console) and check that the screen shows `PAIRING`.
+  The window closes after 5 minutes.
+- Enter the 6-digit code shown on the monitor. A new code is generated every
+  time pairing mode starts.
+- If pairing keeps failing after a factory reset, remove the old pairing: in
+  iOS **Settings → Bluetooth** or **Settings → Accessories**, or in Android's
+  Bluetooth settings.
+- Writes before pairing fail with "insufficient authentication". Generic BLE
+  clients must pair first.
+
+## A firmware update failed
+
+The device logs (app → device → **Logs**) show each OTA step. A failed
+download or checksum leaves the current firmware running. A new image that
+cannot upload within 5 minutes rolls back automatically and reports
+`failed: rolled back`. Approve the update again once the cause is fixed.
