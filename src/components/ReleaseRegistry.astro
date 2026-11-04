@@ -120,8 +120,12 @@ for (const line of [...lines].sort((a, b) => newestFirst(a.line, b.line))) {
           {table.title}
           {table.lines.length === 1 && <span class={`status status-${table.lines[0].status}`}>{table.lines[0].status}</span>}
         </h3>
-        <div class="scroll">
+        <div class="scroll not-content">
         <table>
+          <colgroup>
+            <col class="col-version" />
+            {COLUMNS.map(() => <col />)}
+          </colgroup>
           <thead>
             <tr>
               <th scope="col">Version</th>
@@ -212,35 +216,55 @@ for (const line of [...lines].sort((a, b) => newestFirst(a.line, b.line))) {
 </div>
 
 <style>
-  .release-registry .scroll {
-    overflow-x: auto;
-  }
-  .release-registry table {
-    display: table;
-    width: 100%;
-    min-width: 42rem;
-    table-layout: fixed;
-    font-size: var(--sl-text-sm);
-  }
-  .release-registry th,
-  .release-registry td {
-    vertical-align: top;
-    padding: 0.4rem 0.5rem;
-  }
-  .release-registry thead th {
-    font-size: var(--sl-text-xs);
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
-    color: var(--sl-color-gray-3);
-  }
-  .release-registry thead th:first-child,
-  .release-registry tbody th {
-    width: 5.5rem;
-  }
+  /* The table sits in .not-content, so Starlight's markdown styles (table
+     borders, <details> rails and markers) don't apply; these are plain cells. */
   .release-registry h3 {
     display: flex;
     align-items: center;
     gap: 0.5rem;
+  }
+  .release-registry .scroll {
+    overflow-x: auto;
+    margin-top: 0.75rem;
+  }
+  /* Same grid in every table: a narrow Version column and four equal ones,
+     wide enough for "0.3.2  2026-09-16" on one line. Narrower screens scroll. */
+  .release-registry table {
+    width: 100%;
+    min-width: 42rem;
+    table-layout: fixed;
+    border-collapse: collapse;
+    font-size: var(--sl-text-xs);
+  }
+  .release-registry th,
+  .release-registry td {
+    text-align: start;
+    vertical-align: top;
+    padding: 0.45rem 0.75rem 0.45rem 0;
+    border-bottom: 1px solid var(--sl-color-hairline);
+    white-space: nowrap;
+  }
+  .release-registry .col-version {
+    width: 4.5rem;
+  }
+  .release-registry thead th {
+    font-size: var(--sl-text-2xs);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--sl-color-gray-3);
+    border-bottom-color: var(--sl-color-gray-5);
+  }
+  .release-registry tbody th {
+    font-weight: 600;
+  }
+  .release-registry code {
+    font-family: var(--sl-font-mono);
+    font-size: inherit;
+    padding: 0.05rem 0.3rem;
+    border-radius: 0.25rem;
+    background: var(--sl-color-gray-6);
+    color: var(--sl-color-white);
   }
   .status {
     display: inline-block;
@@ -259,46 +283,35 @@ for (const line of [...lines].sort((a, b) => newestFirst(a.line, b.line))) {
     color: var(--sl-color-text-accent);
     background: var(--sl-color-accent-low);
   }
-  .release-registry details {
-    margin: 0;
-  }
   .release-registry details + details {
-    margin-top: 0.1rem;
+    margin-top: 0.15rem;
   }
   .release-registry summary {
     cursor: pointer;
-    white-space: nowrap;
-    font-size: var(--sl-text-xs);
     line-height: 1.6;
   }
-  .release-registry summary code {
-    font-size: inherit;
-    padding: 0 0.25rem;
+  .release-registry summary::marker {
+    color: var(--sl-color-gray-4);
   }
   .release-registry summary time {
-    margin-inline-start: 0.35rem;
+    margin-inline-start: 0.4rem;
     color: var(--sl-color-gray-3);
     font-variant-numeric: tabular-nums;
   }
-  .release-registry summary::marker,
-  .release-registry summary::-webkit-details-marker {
-    color: var(--sl-color-gray-4);
+  .release-registry .detail {
+    margin: 0.2rem 0 0.5rem 1rem;
+    white-space: normal;
+  }
+  .release-registry .detail p,
+  .release-registry .detail ul {
+    margin: 0.15rem 0 0;
+  }
+  .release-registry .detail ul {
+    padding-inline-start: 1rem;
   }
   .release-registry .detail .info {
     color: var(--sl-color-white);
     font-weight: 500;
-  }
-  .release-registry .detail {
-    margin: 0.25rem 0 0.5rem;
-    padding-inline-start: 0.625rem;
-    border-inline-start: 2px solid var(--sl-color-gray-5);
-    font-size: var(--sl-text-xs);
-  }
-  .release-registry .detail > * {
-    margin: 0.2rem 0 0;
-  }
-  .release-registry .detail ul {
-    padding-inline-start: 1rem;
   }
   .release-registry .detail a {
     overflow-wrap: anywhere;
@@ -309,8 +322,7 @@ for (const line of [...lines].sort((a, b) => newestFirst(a.line, b.line))) {
   }
   .release-registry .cell-link {
     display: inline-block;
-    margin-top: 0.4rem;
-    font-size: var(--sl-text-xs);
+    margin-top: 0.35rem;
   }
   .release-registry .notes {
     font-size: var(--sl-text-sm);
