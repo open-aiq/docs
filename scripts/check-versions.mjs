@@ -5,6 +5,7 @@ import { readFile } from 'node:fs/promises'
 const registry = JSON.parse(await readFile(new URL('../src/data/versions.json', import.meta.url), 'utf8'))
 const failures = []
 const MINOR = /^\d+\.\d+$/
+const EXACT = /^\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?$/
 const STATUSES = new Set(['current', 'superseded', 'planned'])
 
 const components = registry.components ?? {}
@@ -36,6 +37,25 @@ for (const entry of lines) {
     const id = `${key}@${version}`
     if (seenVersions.has(id)) failures.push(`${where}: ${key} ${version} is already registered in line ${seenVersions.get(id)}`)
     seenVersions.set(id, entry.line)
+  }
+  for (const [key, releases] of Object.entries(entry.releases ?? {})) {
+    const minor = entry.components?.[key]
+    if (!minor) failures.push(`${where}: releases.${key} lists a component this line does not register`)
+    if (!Array.isArray(releases)) {
+      failures.push(`${where}: releases.${key} must be a list`)
+      continue
+    }
+    const seen = new Set()
+    for (const release of releases) {
+      const label = `${where}: releases.${key} ${release.version}`
+      if (!EXACT.test(release.version ?? '')) failures.push(`${label}: version must look like 0.4.1`)
+      else if (minor && !release.version.startsWith(`${minor}.`)) failures.push(`${label}: not in ${key} ${minor}`)
+      if (seen.has(release.version)) failures.push(`${label}: listed twice`)
+      seen.add(release.version)
+      if (!release.info || release.info.trim().split(/\s+/).length > 3) {
+        failures.push(`${label}: info must be a short label (1-3 words)`)
+      }
+    }
   }
 }
 if (current !== 1) failures.push(`lines: exactly one line must have status "current" (found ${current})`)
