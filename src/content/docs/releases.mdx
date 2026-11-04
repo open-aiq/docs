@@ -1,0 +1,31 @@
+---
+title: Releases and versions
+description: The Open AIQ version registry, which component versions belong together, and where to download them.
+---
+
+import ReleaseRegistry from "../../components/ReleaseRegistry.astro";
+
+Open AIQ ships four components: the backend API, the web dashboard, the mobile
+app, and the device firmware. Each one is versioned on its own, and a **release
+line** records which of their versions work together. Downloads (firmware
+images, app packages, build archives) are listed from each repository's GitHub
+releases.
+
+## How releases are registered
+
+The registry lives in
+[`src/data/versions.json`](https://github.com/open-aiq/docs/blob/main/src/data/versions.json)
+and is published at [`/versions.json`](https://docs.air-iq.net/versions.json).
+Every component's `make release` fetches it before building or tagging:
+
+- A **patch** release (`0.4.1`, `0.4.2`) is allowed when its `major.minor` is
+  already registered for that component.
+- A new **major or minor** version must be added to the registry first: add
+  the component to a new or existing line, merge the change, and wait for this
+  site to deploy. Until then the release is refused.
+- If the registry cannot be reached, the release is refused too, so versions
+  never drift from what is documented here.
+
+Open AIQ has not reached 1.0, so all versions stay below `1.0.0`.
+
+<ReleaseRegistry />

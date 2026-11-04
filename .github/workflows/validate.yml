@@ -24,6 +24,8 @@ jobs:
         run: npm run check:api
       - name: Validate and build
         run: npm run validate
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Check for accidentally committed secrets
         run: |
           test -z "$(find . -path ./node_modules -prune -o -path ./.git -prune -o \( -name .env -o -name secrets.h -o -name '*.dump' \) -print)"

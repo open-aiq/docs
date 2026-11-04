@@ -1,0 +1,102 @@
+---
+// Renders the version registry with each component's published releases and
+// their downloads. Releases are read from the GitHub API at build time, so a
+// docs rebuild picks up new releases without editing this site; if GitHub is
+// unreachable the page still builds and links to the repository releases.
+import registry from '../data/versions.json'
+
+type Asset = { name: string; size: number; browser_download_url: string }
+type Release = { tag_name: string; html_url: string; published_at: string; prerelease: boolean; draft: boolean; assets: Asset[] }
+
+const headers: Record<string, string> = { Accept: 'application/vnd.github+json', 'User-Agent': 'open-aiq-docs' }
+const token = import.meta.env.GITHUB_TOKEN ?? process.env.GITHUB_TOKEN
+if (token) headers.Authorization = `Bearer ${token}`
+
+const releasesByComponent = new Map<string, Release[] | null>()
+for (const [key, component] of Object.entries(registry.components)) {
+  try {
+    const response = await fetch(`https://api.github.com/repos/${component.repo}/releases?per_page=100`, { headers })
+    if (!response.ok) throw new Error(`HTTP ${response.status}`)
+    const releases = (await response.json()) as Release[]
+    releasesByComponent.set(key, releases.filter((release) => !release.draft))
+  } catch (error) {
+    console.warn(`[releases] could not load ${component.repo} releases: ${error}`)
+    releasesByComponent.set(key, null)
+  }
+}
+
+const minorOf = (tag: string) => tag.replace(/^v/, '').split(/[-+]/)[0].split('.').slice(0, 2).join('.')
+const releasesFor = (key: string, minor: string) =>
+  (releasesByComponent.get(key) ?? []).filter((release) => minorOf(release.tag_name) === minor)
+const size = (bytes: number) =>
+  bytes >= 1024 * 1024 ? `${(bytes / 1024 / 1024).toFixed(1)} MB` : `${Math.max(1, Math.round(bytes / 1024))} KB`
+const date = (iso: string) => iso.slice(0, 10)
+type Component = { name: string; repo: string; links?: { label: string; url: string }[] }
+const components = registry.components as Record<string, Component>
+---
+
+{registry.lines.map((line) => (
+  <section id={`line-${line.line}`}>
+    <h2>
+      {line.line} <small>({line.status})</small>
+    </h2>
+    {'notes' in line && line.notes && <p>{line.notes}</p>}
+    <table>
+      <thead>
+        <tr>
+          <th>Component</th>
+          <th>Versions</th>
+          <th>Releases and downloads</th>
+        </tr>
+      </thead>
+      <tbody>
+        {Object.entries(line.components).map(([key, minor]) => {
+          const component = components[key]
+          const releases = releasesFor(key, minor as string)
+          const unavailable = releasesByComponent.get(key) === null
+          return (
+            <tr>
+              <td>
+                <a href={`https://github.com/${component.repo}`}>{component.name}</a>
+              </td>
+              <td>
+                <code>{minor}.x</code>
+              </td>
+              <td>
+                {unavailable && (
+                  <a href={`https://github.com/${component.repo}/releases`}>See GitHub releases</a>
+                )}
+                {!unavailable && releases.length === 0 && <span>Not released yet</span>}
+                {releases.map((release) => (
+                  <details open={release === releases[0]}>
+                    <summary>
+                      <a href={release.html_url}>{release.tag_name}</a> · {date(release.published_at)}
+                      {release.prerelease && ' · pre-release'}
+                    </summary>
+                    {release.assets.length > 0 ? (
+                      <ul>
+                        {release.assets.map((asset) => (
+                          <li>
+                            <a href={asset.browser_download_url}>{asset.name}</a> ({size(asset.size)})
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p>No downloadable files.</p>
+                    )}
+                  </details>
+                ))}
+                {line.status === 'current' &&
+                  (component.links ?? []).map((link) => (
+                    <p>
+                      <a href={link.url}>{link.label}</a>
+                    </p>
+                  ))}
+              </td>
+            </tr>
+          )
+        })}
+      </tbody>
+    </table>
+  </section>
+))}

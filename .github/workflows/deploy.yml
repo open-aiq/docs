@@ -24,6 +24,10 @@ jobs:
         uses: withastro/action@v6
         with:
           node-version: 24
+        env:
+          # Lets the releases page read component releases without hitting
+          # GitHub's anonymous API rate limit.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   deploy:
     needs: build
