@@ -1,0 +1,60 @@
+{
+  "description": "Open AIQ version registry. Every major or minor release of a component must belong to a line listed here before it can be released; release scripts check https://docs.air-iq.net/versions.json and refuse otherwise. Patch releases inside a registered line need no change.",
+  "components": {
+    "backend": {
+      "name": "Backend API",
+      "repo": "open-aiq/backend"
+    },
+    "frontend": {
+      "name": "Web dashboard",
+      "repo": "open-aiq/frontend",
+      "links": [{ "label": "Open the dashboard", "url": "https://open-airiq.web.app" }]
+    },
+    "app": {
+      "name": "Mobile app",
+      "repo": "open-aiq/app",
+      "links": []
+    },
+    "firmware": {
+      "name": "Device firmware",
+      "repo": "open-aiq/device"
+    }
+  },
+  "lines": [
+    {
+      "line": "0.4",
+      "status": "current",
+      "components": {
+        "backend": "0.4",
+        "frontend": "0.4",
+        "app": "0.1",
+        "firmware": "0.3"
+      },
+      "notes": "Device logs, owner-approved OTA firmware updates, mobile app sign-in, Rust ESP-IDF firmware with secure BLE pairing, local-time history charts."
+    },
+    {
+      "line": "0.3",
+      "status": "superseded",
+      "components": {
+        "backend": "0.3",
+        "frontend": "0.3"
+      }
+    },
+    {
+      "line": "0.2",
+      "status": "superseded",
+      "components": {
+        "backend": "0.2",
+        "frontend": "0.2"
+      }
+    },
+    {
+      "line": "0.1",
+      "status": "superseded",
+      "components": {
+        "backend": "0.1",
+        "frontend": "0.1"
+      }
+    }
+  ]
+}

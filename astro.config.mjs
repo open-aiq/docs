@@ -36,6 +36,7 @@ export default defineConfig({
             { label: "Quick start", link: "/quick-start/" },
             { label: "Architecture", link: "/architecture/" },
             { label: "Project status", link: "/project-status/" },
+            { label: "Releases and versions", link: "/releases/" },
           ],
         },
         {
