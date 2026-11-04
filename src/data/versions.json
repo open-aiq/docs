@@ -1,5 +1,5 @@
 {
-  "description": "Open AIQ version registry. Every major or minor release of a component must belong to a line listed here before it can be released; release scripts check https://docs.air-iq.net/versions.json and refuse otherwise. Patch releases inside a registered line need no change. `releases` lists each line's exact versions with a 1-2 word label for the releases page; GitHub releases missing from it are still shown, without a label.",
+  "description": "Open AIQ version registry. Every major or minor release of a component must belong to a line listed here before it can be released; release scripts check https://docs.air-iq.net/versions.json and refuse otherwise. Patch releases inside a registered line need no change. `releases` lists each line's exact versions with a 1-2 word label for the releases page (and a `date` for versions without a GitHub release); GitHub releases missing from it are still shown, without a label.",
   "components": {
     "backend": {
       "name": "Backend API",
@@ -52,8 +52,8 @@
         ],
         "frontend": [
           { "version": "0.3.2", "info": "Bug fixes" },
-          { "version": "0.3.1", "info": "Delete dialog" },
-          { "version": "0.3.0", "info": "API validation" }
+          { "version": "0.3.1", "info": "Delete dialog", "date": "2026-09-15" },
+          { "version": "0.3.0", "info": "API validation", "date": "2026-09-09" }
         ]
       }
     },
@@ -66,8 +66,8 @@
           { "version": "0.2.0", "info": "Auth" }
         ],
         "frontend": [
-          { "version": "0.2.1", "info": "Doc links" },
-          { "version": "0.2.0", "info": "Device data" }
+          { "version": "0.2.1", "info": "Doc links", "date": "2026-09-08" },
+          { "version": "0.2.0", "info": "Device data", "date": "2026-09-07" }
         ]
       }
     },
@@ -80,8 +80,8 @@
           { "version": "0.1.0", "info": "Data API" }
         ],
         "frontend": [
-          { "version": "0.1.1", "info": "Housekeeping" },
-          { "version": "0.1.0", "info": "Dashboard", "tag": "0.1.0" }
+          { "version": "0.1.1", "info": "Housekeeping", "date": "2026-07-22" },
+          { "version": "0.1.0", "info": "Dashboard", "tag": "0.1.0", "date": "2026-07-04" }
         ]
       }
     }

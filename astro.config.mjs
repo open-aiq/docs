@@ -40,9 +40,10 @@ export default defineConfig({
           ],
         },
         {
-          label: "Use the dashboard",
+          label: "Use Open AIQ",
           items: [
             { label: "Dashboard guide", link: "/dashboard/" },
+            { label: "Mobile app", link: "/dashboard/app/" },
             { label: "Register a device", link: "/dashboard/register-device/" },
             { label: "Privacy and public map", link: "/dashboard/privacy/" },
             { label: "Troubleshooting", link: "/dashboard/troubleshooting/" },
@@ -55,6 +56,7 @@ export default defineConfig({
             { label: "Firmware setup", link: "/device/firmware/" },
             { label: "BLE provisioning", link: "/device/ble/" },
             { label: "Telemetry and display", link: "/device/telemetry/" },
+            { label: "Firmware updates and logs", link: "/device/ota/" },
           ],
         },
         {

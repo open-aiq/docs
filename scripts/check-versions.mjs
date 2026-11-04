@@ -52,6 +52,7 @@ for (const entry of lines) {
       else if (minor && !release.version.startsWith(`${minor}.`)) failures.push(`${label}: not in ${key} ${minor}`)
       if (seen.has(release.version)) failures.push(`${label}: listed twice`)
       seen.add(release.version)
+      if (release.date !== undefined && !/^\d{4}-\d{2}-\d{2}$/.test(release.date)) failures.push(`${label}: date must be YYYY-MM-DD`)
       if (!release.info || release.info.trim().split(/\s+/).length > 3) {
         failures.push(`${label}: info must be a short label (1-3 words)`)
       }

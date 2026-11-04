@@ -4,27 +4,52 @@ description: Data and control flow across the Open AIQ repositories.
 ---
 
 ```text
-PMS5003 + DHT22
-       │ every 20 s
-       ▼
-ESP32 firmware ── LCD
-       │ averaged upload every 10 min
-       │ X-Device-ID + X-Device-Key
-       ▼
-Go API ───────── PostgreSQL
-  ▲                    │
-  │ Clerk bearer token │ current/history
-  └──── React dashboard┘
-
-Flutter / generic BLE client ── Nordic UART ──► ESP32 configuration
+PMS5003 (UART) + SHT30 (I²C)
+          │ sample every 20 s
+          ▼
+ESP32-S3 firmware ── 128×64 OLED, two buttons
+   │  ▲
+   │  │ BLE (Nordic UART, passkey pairing): provisioning, live readings
+   │  └──────────────── Mobile app (Flutter) ──┐
+   │                                           │ Clerk token
+   │ HTTPS every 10 min: reading, logs,        ▼
+   │ OTA check (X-Device-ID / X-Device-Key)  Go API ── PostgreSQL
+   └──────────────────────────────────────►    ▲
+                                               │ Clerk token
+                                  React dashboard (web)
 ```
 
 ## Runtime boundaries
 
-The device posts readings to `POST /api/v1/data`. That route authenticates hardware with a public device ID and a secret key. Owner-facing routes use Clerk session bearer tokens. Public device and map routes require no authentication but return only explicitly published data.
+- **Device → backend.** The monitor authenticates with a public device ID and a
+  secret key on every request, and reports its firmware version. It uploads
+  readings (`POST /data`) and important log events (`POST /device/logs`), and
+  asks for an approved update (`GET /device/ota`). See
+  [Telemetry](../device/telemetry/) and
+  [Firmware updates and logs](../device/ota/).
+- **Owner → backend.** The dashboard and the mobile app send a Clerk session
+  token. Browser tokens are checked against the allowed origins; mobile tokens
+  are accepted when the backend allows native clients.
+- **Public.** Public device pages and the map need no sign-in and return only
+  data an owner has made public.
+- **Phone → device.** The mobile app talks to the monitor over Bluetooth
+  using newline-delimited text commands on the Nordic UART Service. Every
+  command requires an encrypted, passkey-paired link. See
+  [BLE provisioning](../device/ble/).
 
-The backend follows `routes → handler → service → repository → database`. The dashboard’s API client is the browser-facing consumer. Firmware and Flutter share a separate BLE contract: newline-delimited commands sent over Nordic UART, with newline-delimited responses that may span notifications.
+The backend follows `routes → handler → service → repository → database`.
+Database migrations run automatically when the backend container starts.
 
 ## Shared contracts
 
-Changes to routes, JSON payloads, device headers, BLE UUIDs/commands, AQI meaning, units, or location nullability must be checked in every affected repository. Generated API pages use a committed snapshot of the backend Swagger file so a docs build does not depend on another repository.
+A change to any of these must be checked in every affected repository:
+
+| Contract | Producers and consumers |
+| --- | --- |
+| REST routes and JSON payloads | backend ↔ dashboard, app, firmware |
+| Device headers (`X-Device-ID`, `X-Device-Key`, `X-Firmware-Version`) | firmware ↔ backend |
+| BLE UUIDs, commands, and reply framing | firmware ↔ app |
+| AQI bands, units, sampling intervals, nullable location | all four |
+
+The API reference pages are generated from a committed snapshot of the
+backend's Swagger file, so a docs build does not depend on another repository.

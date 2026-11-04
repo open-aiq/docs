@@ -3,7 +3,7 @@ title: Open AIQ
 description: Open hardware and software for understanding the air around you.
 template: splash
 hero:
-  tagline: Build a sensor, provision it over BLE, and turn local readings into a clear, privacy-aware dashboard.
+  tagline: Build a monitor, pair it with your phone, and turn local readings into a clear, privacy-aware dashboard.
   actions:
     - text: Get started
       link: /quick-start/
@@ -18,17 +18,17 @@ import { Card, CardGrid } from '@astrojs/starlight/components';
 
 <CardGrid>
   <Card title="Open from sensor to screen" icon="seti:config">
-    ESP32 firmware, a Go API, a React dashboard, and a Flutter provisioning client live in public repositories.
+    Rust firmware for the ESP32-S3, a Go API, a React dashboard, and a Flutter mobile app, all in public repositories.
   </Card>
-  <Card title="Useful data, understandable context" icon="analytics">
-    Track PM1.0, PM2.5, PM10, temperature, humidity, heat index, and US EPA AQI over time.
+  <Card title="Useful data, clear context" icon="analytics">
+    PM1.0, PM2.5, PM10, temperature, humidity, heat index, and US EPA AQI, live on the device and over time online.
   </Card>
-  <Card title="Private by default" icon="padlock">
-    Device readings and exact location stay private until an owner explicitly enables public sharing.
+  <Card title="Private and secure by default" icon="padlock">
+    Passkey-paired Bluetooth, per-device upload keys, and readings that stay private until an owner shares them.
   </Card>
-  <Card title="Built to be changed" icon="puzzle">
-    Reproduce the stack locally, inspect every contract, and contribute to whichever layer interests you.
+  <Card title="Updates you approve" icon="rocket">
+    Monitors install new firmware over the air only after their owner approves it, and roll back on failure.
   </Card>
 </CardGrid>
 
-Open AIQ is pre-1.0. Start with the [quick start](./quick-start/), learn how the pieces fit in the [architecture guide](./architecture/), or browse the generated [API reference](./api/).
+Open AIQ is pre-1.0. Start with the [quick start](./quick-start/), see how the pieces fit in the [architecture guide](./architecture/), or browse the [API reference](./api/).
