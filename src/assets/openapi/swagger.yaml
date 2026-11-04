@@ -176,6 +176,11 @@ definitions:
       device_id:
         example: dev_9f1c8a3b4d2e4f0a5b6c7d8e9f001122
         type: string
+      firmware_version:
+        description: FirmwareVersion is the version the device last reported; null
+          until it reports one.
+        example: 0.1.0
+        type: string
       id:
         type: string
       is_location_public:
@@ -190,6 +195,11 @@ definitions:
       name:
         example: Living Room Sensor
         type: string
+      ota:
+        allOf:
+        - $ref: '#/definitions/device.OtaSummary'
+        description: Ota summarizes the device's firmware-update state in listings;
+          null when unknown.
       updated_at:
         type: string
     type: object
@@ -206,6 +216,30 @@ definitions:
         items:
           $ref: '#/definitions/device.PublicDevice'
         type: array
+    type: object
+  device.OtaSummary:
+    properties:
+      progress:
+        example: 40
+        type: integer
+      status:
+        description: |-
+          Status is one of: up_to_date, update_available, approved, downloading,
+          installing, failed.
+        enum:
+        - up_to_date
+        - update_available
+        - approved
+        - downloading
+        - installing
+        - failed
+        example: update_available
+        type: string
+      version:
+        description: Version is the release the status refers to (the available or
+          in-progress one).
+        example: 0.2.0
+        type: string
     type: object
   device.PublicDevice:
     properties:
@@ -250,6 +284,100 @@ definitions:
     properties:
       data:
         $ref: '#/definitions/device.Device'
+    type: object
+  devicelog.Entry:
+    properties:
+      boot_count:
+        example: 12
+        minimum: 0
+        type: integer
+      level:
+        enum:
+        - debug
+        - info
+        - warn
+        - error
+        example: warn
+        type: string
+      message:
+        example: 'reconnect failed: timeout'
+        maxLength: 256
+        type: string
+      tag:
+        example: wifi
+        maxLength: 32
+        type: string
+      ts:
+        description: Ts is the device's Unix time in seconds, omitted until its clock
+          is synced.
+        example: 1793700000
+        type: integer
+      uptime_ms:
+        example: 183000
+        minimum: 0
+        type: integer
+    required:
+    - boot_count
+    - level
+    - message
+    - uptime_ms
+    type: object
+  devicelog.ListResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/devicelog.Log'
+        type: array
+      next_before:
+        description: NextBefore is the cursor for the next (older) page, or null at
+          the end.
+        type: integer
+    type: object
+  devicelog.Log:
+    properties:
+      boot_count:
+        type: integer
+      created_at:
+        type: string
+      device_ts:
+        type: string
+      id:
+        type: integer
+      level:
+        example: warn
+        type: string
+      message:
+        type: string
+      tag:
+        example: wifi
+        type: string
+      uptime_ms:
+        type: integer
+    type: object
+  devicelog.UploadRequest:
+    properties:
+      dropped:
+        description: Dropped counts entries the device discarded because its buffer
+          was full.
+        example: 0
+        minimum: 0
+        type: integer
+      entries:
+        items:
+          $ref: '#/definitions/devicelog.Entry'
+        maxItems: 50
+        type: array
+    type: object
+  devicelog.UploadResponse:
+    properties:
+      data:
+        $ref: '#/definitions/devicelog.UploadResult'
+    type: object
+  devicelog.UploadResult:
+    properties:
+      accepted:
+        example: 12
+        type: integer
     type: object
   devicereading.Location:
     properties:
@@ -350,6 +478,176 @@ definitions:
         type: string
       id:
         type: integer
+    type: object
+  firmware.ApproveRequest:
+    properties:
+      release_id:
+        type: string
+    required:
+    - release_id
+    type: object
+  firmware.DeviceJob:
+    properties:
+      job_id:
+        type: string
+      sha256:
+        type: string
+      size:
+        type: integer
+      status:
+        enum:
+        - approved
+        - downloading
+        - installing
+        example: approved
+        type: string
+      url:
+        type: string
+      version:
+        example: 0.2.0
+        type: string
+    type: object
+  firmware.DeviceJobResponse:
+    properties:
+      data:
+        $ref: '#/definitions/firmware.DeviceJob'
+    type: object
+  firmware.DeviceOta:
+    properties:
+      available:
+        allOf:
+        - $ref: '#/definitions/firmware.Release'
+        description: Available is the newest release newer than CurrentVersion, if
+          any.
+      current_version:
+        description: |-
+          CurrentVersion is the firmware the device last reported; null if it never did
+          (firmware that predates OTA support).
+        example: 0.1.0
+        type: string
+      job:
+        allOf:
+        - $ref: '#/definitions/firmware.Job'
+        description: Job is the most recent update job of the device, if any.
+    type: object
+  firmware.DeviceOtaResponse:
+    properties:
+      data:
+        $ref: '#/definitions/firmware.DeviceOta'
+    type: object
+  firmware.Job:
+    properties:
+      approved_at:
+        type: string
+      error:
+        type: string
+      id:
+        type: string
+      progress:
+        example: 40
+        type: integer
+      release_id:
+        type: string
+      status:
+        enum:
+        - approved
+        - downloading
+        - installing
+        - succeeded
+        - failed
+        - cancelled
+        example: downloading
+        type: string
+      updated_at:
+        type: string
+      version:
+        example: 0.2.0
+        type: string
+    type: object
+  firmware.JobResponse:
+    properties:
+      data:
+        $ref: '#/definitions/firmware.Job'
+    type: object
+  firmware.PublishReleaseRequest:
+    properties:
+      notes:
+        example: Adds secure BLE pairing.
+        maxLength: 4000
+        type: string
+      sha256:
+        example: 53ff9481b8ea2e8ec2c9533432c1e66df99c68a0a9e3079dc455547b13d39346
+        type: string
+      size:
+        example: 1600800
+        type: integer
+      url:
+        example: https://github.com/open-aiq/aqs-device/releases/download/v0.2.0/device_rust.bin
+        maxLength: 2048
+        type: string
+      version:
+        example: 0.2.0
+        maxLength: 32
+        type: string
+    required:
+    - sha256
+    - size
+    - url
+    - version
+    type: object
+  firmware.Release:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: string
+      notes:
+        type: string
+      sha256:
+        type: string
+      size:
+        example: 1600800
+        type: integer
+      url:
+        type: string
+      version:
+        example: 0.2.0
+        type: string
+    type: object
+  firmware.ReleaseResponse:
+    properties:
+      data:
+        $ref: '#/definitions/firmware.Release'
+    type: object
+  firmware.StatusReportRequest:
+    properties:
+      error:
+        maxLength: 500
+        type: string
+      job_id:
+        type: string
+      progress:
+        example: 40
+        maximum: 100
+        minimum: 0
+        type: integer
+      status:
+        enum:
+        - downloading
+        - installing
+        - succeeded
+        - failed
+        example: downloading
+        type: string
+      version:
+        description: Version is the firmware version currently running on the device.
+        example: 0.1.0
+        maxLength: 32
+        type: string
+    required:
+    - job_id
+    - status
+    - version
     type: object
   problem.Problem:
     properties:
@@ -526,6 +824,10 @@ paths:
         name: X-Device-Key
         required: true
         type: string
+      - description: Firmware version running on the device, e.g. 0.2.0
+        in: header
+        name: X-Firmware-Version
+        type: string
       - description: Sensor reading
         in: body
         name: request
@@ -564,6 +866,155 @@ paths:
           schema:
             $ref: '#/definitions/problem.Problem'
       summary: Upload a sensor reading
+      tags:
+      - Device Data
+  /device/logs:
+    post:
+      consumes:
+      - application/json
+      description: Stores up to 50 important log entries (warnings, errors, boot,
+        WiFi, OTA events) from the calling device. Limited to 20 uploads per device
+        per hour.
+      parameters:
+      - description: Public device id (dev_...)
+        in: header
+        name: X-Device-ID
+        required: true
+        type: string
+      - description: Secret device key (sk_...)
+        in: header
+        name: X-Device-Key
+        required: true
+        type: string
+      - description: Log batch
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/devicelog.UploadRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/devicelog.UploadResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/problem.Problem'
+        "413":
+          description: Request Entity Too Large
+          schema:
+            $ref: '#/definitions/problem.Problem'
+        "415":
+          description: Unsupported Media Type
+          schema:
+            $ref: '#/definitions/problem.Problem'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/problem.Problem'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/problem.Problem'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/problem.Problem'
+      summary: Upload device log entries (device)
+      tags:
+      - Device Data
+  /device/ota:
+    get:
+      description: Returns the update the owner approved for the calling device, or
+        null.
+      parameters:
+      - description: Public device id (dev_...)
+        in: header
+        name: X-Device-ID
+        required: true
+        type: string
+      - description: Secret device key (sk_...)
+        in: header
+        name: X-Device-Key
+        required: true
+        type: string
+      - description: Running firmware version
+        in: header
+        name: X-Firmware-Version
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/firmware.DeviceJobResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/problem.Problem'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/problem.Problem'
+      summary: Check for an approved update (device)
+      tags:
+      - Device Data
+  /device/ota/status:
+    post:
+      consumes:
+      - application/json
+      description: The device reports downloading (with progress), installing, succeeded
+        or failed. 409 means the job was cancelled or already finished and the device
+        must stop.
+      parameters:
+      - description: Public device id (dev_...)
+        in: header
+        name: X-Device-ID
+        required: true
+        type: string
+      - description: Secret device key (sk_...)
+        in: header
+        name: X-Device-Key
+        required: true
+        type: string
+      - description: Progress report
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/firmware.StatusReportRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/firmware.JobResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/problem.Problem'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/problem.Problem'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/problem.Problem'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/problem.Problem'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/problem.Problem'
+      summary: Report update progress (device)
       tags:
       - Device Data
   /devices:
@@ -817,6 +1268,191 @@ paths:
       summary: Get historical air quality data for one device
       tags:
       - Air Quality
+  /devices/{id}/logs:
+    get:
+      description: Returns the device's log entries, newest first. level is the minimum
+        level (warn returns warn and error). Page with next_before.
+      parameters:
+      - description: Device id (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Minimum level
+        enum:
+        - debug
+        - info
+        - warn
+        - error
+        in: query
+        name: level
+        type: string
+      - description: Page size (1-200, default 50)
+        in: query
+        name: limit
+        type: integer
+      - description: Return entries older than this id (from next_before)
+        in: query
+        name: before
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/devicelog.ListResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/problem.Problem'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/problem.Problem'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/problem.Problem'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/problem.Problem'
+      security:
+      - BearerAuth: []
+      summary: List a device's logs
+      tags:
+      - Devices
+  /devices/{id}/ota:
+    get:
+      description: Returns the running firmware version, the newest newer release
+        (if any) and the latest update job.
+      parameters:
+      - description: Device id (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/firmware.DeviceOtaResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/problem.Problem'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/problem.Problem'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/problem.Problem'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/problem.Problem'
+      security:
+      - BearerAuth: []
+      summary: Get a device's firmware update state
+      tags:
+      - Firmware
+  /devices/{id}/ota/approve:
+    post:
+      consumes:
+      - application/json
+      description: Approves installing a release on the device. The device downloads
+        it on its next check-in (after its next upload, or immediately when the app
+        sends OTA:CHECK over BLE).
+      parameters:
+      - description: Device id (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Release to install
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/firmware.ApproveRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/firmware.JobResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/problem.Problem'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/problem.Problem'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/problem.Problem'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/problem.Problem'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/problem.Problem'
+      security:
+      - BearerAuth: []
+      summary: Approve a firmware update
+      tags:
+      - Firmware
+  /devices/{id}/ota/cancel:
+    post:
+      description: Withdraws an approval before the device starts downloading.
+      parameters:
+      - description: Device id (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/firmware.JobResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/problem.Problem'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/problem.Problem'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/problem.Problem'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/problem.Problem'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/problem.Problem'
+      security:
+      - BearerAuth: []
+      summary: Cancel an approved firmware update
+      tags:
+      - Firmware
   /devices/{id}/rotate-key:
     post:
       description: Generates a new device_key for the device, invalidating the old
@@ -856,6 +1492,55 @@ paths:
       summary: Rotate a device's secret key
       tags:
       - Devices
+  /firmware/releases:
+    post:
+      consumes:
+      - application/json
+      description: Registers an OTA image hosted at an HTTPS URL. Called by the device
+        release pipeline with the FIRMWARE_PUBLISH_TOKEN bearer token. Owners are
+        then offered the update in the app.
+      parameters:
+      - description: Bearer <FIRMWARE_PUBLISH_TOKEN>
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: Release metadata
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/firmware.PublishReleaseRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/firmware.ReleaseResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/problem.Problem'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/problem.Problem'
+        "415":
+          description: Unsupported Media Type
+          schema:
+            $ref: '#/definitions/problem.Problem'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/problem.Problem'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/problem.Problem'
+      summary: Publish a firmware release
+      tags:
+      - Firmware
   /public/devices:
     get:
       produces:
