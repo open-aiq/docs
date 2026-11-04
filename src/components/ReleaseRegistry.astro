@@ -1,102 +1,310 @@
 ---
-// Renders the version registry with each component's published releases and
-// their downloads. Releases are read from the GitHub API at build time, so a
-// docs rebuild picks up new releases without editing this site; if GitHub is
-// unreachable the page still builds and links to the repository releases.
+// Renders the version registry as release tables. Each cell lists a
+// component's exact versions in that line with their short label; expanding a
+// version shows its date, release page and downloads.
+//
+// Tables: from 1.0 on, one table per major version (rows are its lines).
+// Below 1.0 every minor can break compatibility, so each 0.x line gets its own
+// table.
+//
+// Exact versions come from the registry's `releases` and from the GitHub API at
+// build time, so a docs rebuild picks up new releases (without a label until
+// one is added). If GitHub is unreachable the page still builds.
 import registry from '../data/versions.json'
 
 type Asset = { name: string; size: number; browser_download_url: string }
-type Release = { tag_name: string; html_url: string; published_at: string; prerelease: boolean; draft: boolean; assets: Asset[] }
+type Release = {
+  tag_name: string
+  html_url: string
+  published_at: string
+  prerelease: boolean
+  draft: boolean
+  assets: Asset[]
+}
+type Component = { name: string; repo: string; links?: { label: string; url: string }[] }
+type Entry = { version: string; info?: string; tag?: string }
+type Line = {
+  line: string
+  status: string
+  notes?: string
+  components: Record<string, string>
+  releases?: Record<string, Entry[]>
+}
 
-const headers: Record<string, string> = { Accept: 'application/vnd.github+json', 'User-Agent': 'open-aiq-docs' }
+const COLUMNS = [
+  { key: 'backend', label: 'Backend' },
+  { key: 'frontend', label: 'Frontend' },
+  { key: 'firmware', label: 'Device' },
+  { key: 'app', label: 'App' },
+]
+
+const components = registry.components as Record<string, Component>
+const lines = registry.lines as Line[]
+
+const headers: Record<string, string> = {
+  Accept: 'application/vnd.github+json',
+  'User-Agent': 'open-aiq-docs',
+}
 const token = import.meta.env.GITHUB_TOKEN ?? process.env.GITHUB_TOKEN
 if (token) headers.Authorization = `Bearer ${token}`
 
-const releasesByComponent = new Map<string, Release[] | null>()
-for (const [key, component] of Object.entries(registry.components)) {
+const githubReleases = new Map<string, Release[] | null>()
+for (const [key, component] of Object.entries(components)) {
   try {
     const response = await fetch(`https://api.github.com/repos/${component.repo}/releases?per_page=100`, { headers })
     if (!response.ok) throw new Error(`HTTP ${response.status}`)
     const releases = (await response.json()) as Release[]
-    releasesByComponent.set(key, releases.filter((release) => !release.draft))
+    githubReleases.set(key, releases.filter((release) => !release.draft))
   } catch (error) {
     console.warn(`[releases] could not load ${component.repo} releases: ${error}`)
-    releasesByComponent.set(key, null)
+    githubReleases.set(key, null)
   }
 }
 
-const minorOf = (tag: string) => tag.replace(/^v/, '').split(/[-+]/)[0].split('.').slice(0, 2).join('.')
-const releasesFor = (key: string, minor: string) =>
-  (releasesByComponent.get(key) ?? []).filter((release) => minorOf(release.tag_name) === minor)
+const bare = (tag: string) => tag.replace(/^v/, '')
+const minorOf = (version: string) => bare(version).split(/[-+]/)[0].split('.').slice(0, 2).join('.')
+const parts = (version: string) => bare(version).split(/[-+]/)[0].split('.').map(Number)
+const newestFirst = (a: string, b: string) => {
+  const [x, y] = [parts(a), parts(b)]
+  for (let i = 0; i < 3; i++) if (x[i] !== y[i]) return (y[i] ?? 0) - (x[i] ?? 0)
+  return b.localeCompare(a)
+}
 const size = (bytes: number) =>
   bytes >= 1024 * 1024 ? `${(bytes / 1024 / 1024).toFixed(1)} MB` : `${Math.max(1, Math.round(bytes / 1024))} KB`
-const date = (iso: string) => iso.slice(0, 10)
-type Component = { name: string; repo: string; links?: { label: string; url: string }[] }
-const components = registry.components as Record<string, Component>
+
+type Item = { version: string; info?: string; tagUrl: string; release?: Release }
+
+// The registry's entries plus any GitHub release in the same major.minor.
+function itemsFor(line: Line, key: string): Item[] | undefined {
+  const minor = line.components[key]
+  if (!minor) return undefined
+  const repo = components[key].repo
+  const fromGitHub = (githubReleases.get(key) ?? []).filter((release) => minorOf(release.tag_name) === minor)
+  const items = new Map<string, Item>()
+  for (const entry of line.releases?.[key] ?? []) {
+    const release = fromGitHub.find((r) => bare(r.tag_name) === entry.version)
+    const tag = entry.tag ?? release?.tag_name ?? `v${entry.version}`
+    items.set(entry.version, {
+      version: entry.version,
+      info: entry.info,
+      release,
+      tagUrl: `https://github.com/${repo}/tree/${tag}`,
+    })
+  }
+  for (const release of fromGitHub) {
+    const version = bare(release.tag_name)
+    if (!items.has(version)) {
+      items.set(version, { version, release, tagUrl: `https://github.com/${repo}/tree/${release.tag_name}` })
+    }
+  }
+  return [...items.values()].sort((a, b) => newestFirst(a.version, b.version))
+}
+
+// Group lines into tables: 1.x and later by major, each 0.x line alone.
+const tables: { title: string; id: string; lines: Line[] }[] = []
+for (const line of [...lines].sort((a, b) => newestFirst(a.line, b.line))) {
+  const major = line.line.split('.')[0]
+  const title = major === '0' ? line.line : `${major}.x`
+  const table = tables.find((t) => t.title === title)
+  if (table) table.lines.push(line)
+  else tables.push({ title, id: `line-${title}`, lines: [line] })
+}
 ---
 
-{registry.lines.map((line) => (
-  <section id={`line-${line.line}`}>
-    <h2>
-      {line.line} <small>({line.status})</small>
-    </h2>
-    {'notes' in line && line.notes && <p>{line.notes}</p>}
-    <table>
-      <thead>
-        <tr>
-          <th>Component</th>
-          <th>Versions</th>
-          <th>Releases and downloads</th>
-        </tr>
-      </thead>
-      <tbody>
-        {Object.entries(line.components).map(([key, minor]) => {
-          const component = components[key]
-          const releases = releasesFor(key, minor as string)
-          const unavailable = releasesByComponent.get(key) === null
-          return (
+<div class="release-registry">
+  {
+    tables.map((table) => (
+      <section>
+        <h3 id={table.id}>
+          {table.title}
+          {table.lines.length === 1 && <span class={`status status-${table.lines[0].status}`}>{table.lines[0].status}</span>}
+        </h3>
+        <div class="scroll">
+        <table>
+          <thead>
             <tr>
-              <td>
-                <a href={`https://github.com/${component.repo}`}>{component.name}</a>
-              </td>
-              <td>
-                <code>{minor}.x</code>
-              </td>
-              <td>
-                {unavailable && (
-                  <a href={`https://github.com/${component.repo}/releases`}>See GitHub releases</a>
-                )}
-                {!unavailable && releases.length === 0 && <span>Not released yet</span>}
-                {releases.map((release) => (
-                  <details open={release === releases[0]}>
-                    <summary>
-                      <a href={release.html_url}>{release.tag_name}</a> · {date(release.published_at)}
-                      {release.prerelease && ' · pre-release'}
-                    </summary>
-                    {release.assets.length > 0 ? (
-                      <ul>
-                        {release.assets.map((asset) => (
-                          <li>
-                            <a href={asset.browser_download_url}>{asset.name}</a> ({size(asset.size)})
-                          </li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <p>No downloadable files.</p>
-                    )}
-                  </details>
-                ))}
-                {line.status === 'current' &&
-                  (component.links ?? []).map((link) => (
-                    <p>
-                      <a href={link.url}>{link.label}</a>
-                    </p>
-                  ))}
-              </td>
+              <th scope="col">Version family</th>
+              {COLUMNS.map((column) => (
+                <th scope="col">{column.label}</th>
+              ))}
             </tr>
-          )
-        })}
-      </tbody>
-    </table>
-  </section>
-))}
+          </thead>
+          <tbody>
+            {table.lines.map((line) => (
+              <tr>
+                <th scope="row">
+                  <code>{line.line}</code>
+                  {table.lines.length > 1 && <span class={`status status-${line.status}`}>{line.status}</span>}
+                </th>
+                {COLUMNS.map(({ key }) => {
+                  const items = itemsFor(line, key)
+                  const component = components[key]
+                  if (!items) return <td class="none">—</td>
+                  return (
+                    <td>
+                      {items.length === 0 && <span class="muted">Not released</span>}
+                      {items.map((item) => (
+                        <details>
+                          <summary>
+                            <code>{item.version}</code>
+                            {item.info && <span>{item.info}</span>}
+                          </summary>
+                          <div class="detail">
+                            {item.release ? (
+                              <>
+                                <p>
+                                  {item.release.published_at.slice(0, 10)}
+                                  {item.release.prerelease && ' · pre-release'} ·{' '}
+                                  <a href={item.release.html_url}>Release notes</a>
+                                </p>
+                                {item.release.assets.length > 0 ? (
+                                  <ul>
+                                    {item.release.assets.map((asset) => (
+                                      <li>
+                                        <a href={asset.browser_download_url}>{asset.name}</a>{' '}
+                                        <span class="muted">{size(asset.size)}</span>
+                                      </li>
+                                    ))}
+                                  </ul>
+                                ) : (
+                                  <p class="muted">No downloads</p>
+                                )}
+                              </>
+                            ) : githubReleases.get(key) === null ? (
+                              <p>
+                                <a href={`https://github.com/${component.repo}/releases`}>GitHub releases</a>
+                              </p>
+                            ) : (
+                              <p>
+                                <a href={item.tagUrl}>Source at this tag</a>
+                                <span class="muted"> · no GitHub release</span>
+                              </p>
+                            )}
+                          </div>
+                        </details>
+                      ))}
+                      {line.status === 'current' &&
+                        (component.links ?? []).map((link) => (
+                          <a class="cell-link" href={link.url}>
+                            {link.label} ↗
+                          </a>
+                        ))}
+                    </td>
+                  )
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        </div>
+        {table.lines
+          .filter((line) => line.notes)
+          .map((line) => (
+            <p class="notes">
+              {table.lines.length > 1 && <strong>{line.line}: </strong>}
+              {line.notes}
+            </p>
+          ))}
+      </section>
+    ))
+  }
+</div>
+
+<style>
+  .release-registry .scroll {
+    overflow-x: auto;
+  }
+  .release-registry table {
+    display: table;
+    width: 100%;
+    min-width: 38rem;
+    table-layout: fixed;
+    font-size: var(--sl-text-sm);
+  }
+  .release-registry th,
+  .release-registry td {
+    vertical-align: top;
+    padding: 0.5rem 0.625rem;
+  }
+  .release-registry thead th {
+    font-size: var(--sl-text-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--sl-color-gray-3);
+  }
+  .release-registry thead th:first-child,
+  .release-registry tbody th {
+    width: 7.5rem;
+  }
+  .release-registry h3 {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .status {
+    display: inline-block;
+    margin-inline-start: 0.375rem;
+    padding: 0.05rem 0.45rem;
+    border-radius: 999px;
+    font-size: var(--sl-text-2xs);
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    vertical-align: middle;
+    border: 1px solid var(--sl-color-gray-5);
+    color: var(--sl-color-gray-3);
+  }
+  .status-current {
+    border-color: var(--sl-color-accent);
+    color: var(--sl-color-text-accent);
+    background: var(--sl-color-accent-low);
+  }
+  .release-registry details {
+    margin: 0;
+  }
+  .release-registry details + details {
+    margin-top: 0.25rem;
+  }
+  .release-registry summary {
+    cursor: pointer;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.25rem 0.4rem;
+    list-style-position: outside;
+  }
+  .release-registry summary::marker,
+  .release-registry summary::-webkit-details-marker {
+    color: var(--sl-color-gray-4);
+  }
+  .release-registry summary span {
+    color: var(--sl-color-gray-2);
+  }
+  .release-registry .detail {
+    margin: 0.25rem 0 0.5rem;
+    padding-inline-start: 0.625rem;
+    border-inline-start: 2px solid var(--sl-color-gray-5);
+    font-size: var(--sl-text-xs);
+  }
+  .release-registry .detail > * {
+    margin: 0.2rem 0 0;
+  }
+  .release-registry .detail ul {
+    padding-inline-start: 1rem;
+  }
+  .release-registry .detail a {
+    overflow-wrap: anywhere;
+  }
+  .release-registry .muted,
+  .release-registry .none {
+    color: var(--sl-color-gray-4);
+  }
+  .release-registry .cell-link {
+    display: inline-block;
+    margin-top: 0.4rem;
+    font-size: var(--sl-text-xs);
+  }
+  .release-registry .notes {
+    font-size: var(--sl-text-sm);
+    color: var(--sl-color-gray-2);
+  }
+</style>

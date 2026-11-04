@@ -1,31 +1,40 @@
 ---
 title: Releases and versions
-description: The Open AIQ version registry, which component versions belong together, and where to download them.
+description: Which Backend, Frontend, Device and App versions belong together, and where to download them.
 ---
 
 import ReleaseRegistry from "../../components/ReleaseRegistry.astro";
 
-Open AIQ ships four components: the backend API, the web dashboard, the mobile
-app, and the device firmware. Each one is versioned on its own, and a **release
-line** records which of their versions work together. Downloads (firmware
-images, app packages, build archives) are listed from each repository's GitHub
-releases.
+Open AIQ ships four components that are versioned on their own: the backend
+API, the web dashboard (Frontend), the device firmware (Device), and the mobile
+app. A **version family** records which of their versions work together.
+
+Each cell lists a component's exact versions in that family. Expand a version
+for its date, release notes, and downloads. A dash means the component wasn't
+part of that family.
+
+## Versions
+
+Before 1.0, every minor version can break compatibility, so each `0.x` family
+has its own table. From 1.0 on, there is one table per major version.
+
+<ReleaseRegistry />
 
 ## How releases are registered
 
 The registry lives in
 [`src/data/versions.json`](https://github.com/open-aiq/docs/blob/main/src/data/versions.json)
 and is published at [`/versions.json`](https://docs.air-iq.net/versions.json).
-Every component's `make release` fetches it before building or tagging:
+Every component's `make release` checks it before building or tagging:
 
 - A **patch** release (`0.4.1`, `0.4.2`) is allowed when its `major.minor` is
   already registered for that component.
-- A new **major or minor** version must be added to the registry first: add
-  the component to a new or existing line, merge the change, and wait for this
-  site to deploy. Until then the release is refused.
-- If the registry cannot be reached, the release is refused too, so versions
-  never drift from what is documented here.
+- A new **major or minor** version must be registered first: add it to a new
+  or existing family, merge the change, and wait for this site to deploy.
+  Until then, the release is refused.
+- If the registry can't be reached, the release is refused too, so versions
+  never drift from what's documented here.
 
-Open AIQ has not reached 1.0, so all versions stay below `1.0.0`.
-
-<ReleaseRegistry />
+New GitHub releases appear in the tables automatically when the site is next
+deployed. To give one a short label, add it to the family's `releases` list,
+for example `{ "version": "0.4.1", "info": "API fix" }`.
