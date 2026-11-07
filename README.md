@@ -4,17 +4,17 @@ Unified documentation for the Open AIQ hardware and software ecosystem, built wi
 
 ## Development
 
-Use Node 24 and npm:
+Use Node 24 and npm. Run `make help` to see every command.
 
 ```bash
-npm ci
-npm run dev
+make init
+make dev
 ```
 
 Run the full local validation before opening a pull request:
 
 ```bash
-npm run validate
+make verify
 ```
 
 ## Synchronize the API reference
@@ -22,8 +22,10 @@ npm run validate
 Generate Swagger in a local backend checkout, then copy it deterministically:
 
 ```bash
-npm run sync:api -- ../backend/docs/swagger.yaml
+make api:sync
 ```
+
+Pass `SWAGGER=<path>` if your backend checkout lives somewhere else.
 
 Generated endpoint pages use the committed Swagger 2.0 snapshot. The same command synchronizes the
 generated RFC 9457 problem catalog. CI checks both artifacts against `open-aiq/backend` main.

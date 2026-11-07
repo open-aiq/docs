@@ -3,12 +3,12 @@ title: API conventions
 description: Authentication and conventions behind the endpoint reference.
 ---
 
-The generated [API reference](../../api/), built from `backend/docs/swagger.yaml`
-and served below `/api/`, is the authority for routes, parameters, schemas and
+The generated [API reference](../../api/) (from `backend/docs/swagger.yaml`,
+served below `/api/`) is the authority for routes, parameters, schemas and
 response codes. This page covers who can call what.
 
 - Base path: `/api/v1`.
-- Send JSON bodies with `Content-Type: application/json`.
+- JSON bodies use `Content-Type: application/json`.
 - Errors use [RFC 9457 Problem Details](../errors/) (`application/problem+json`).
 
 ## Owner authentication
@@ -19,13 +19,14 @@ Protected routes need a current Clerk session token:
 Authorization: Bearer <clerk-session-token>
 ```
 
-This covers device registration/management, private current/history, firmware
-update (`/devices/{id}/ota`) and device log (`/devices/{id}/logs`) endpoints.
-Resources are scoped to the authenticated owner.
+That covers device registration and management, private current/history,
+firmware update (`/devices/{id}/ota`) and device log (`/devices/{id}/logs`)
+endpoints. Resources are scoped to the signed-in owner.
 
-Browser tokens must carry an authorized party (`azp`) listed in
-`CLERK_AUTHORIZED_PARTIES`. Mobile app tokens carry no `azp` and are accepted
-when `CLERK_ALLOW_NATIVE_CLIENTS=true`.
+| Client | Accepted when |
+| --- | --- |
+| Browser | Token's authorized party (`azp`) is listed in `CLERK_AUTHORIZED_PARTIES` |
+| Mobile app | Token has no `azp` and `CLERK_ALLOW_NATIVE_CLIENTS=true` |
 
 ## Device authentication
 
@@ -44,8 +45,8 @@ curl -X POST 'https://backend.example/api/v1/data' \
   --data '{"pms_data":{"pm1_0":5,"pm2_5":12,"pm10_0":18,"provider":"pms5003"},"aqi":57,"temperature_data":{"temperature":31.2,"humidity":64.5,"heat_index":36.8,"provider":"sht30"}}'
 ```
 
-Devices also send `X-Firmware-Version: <semver>` so owners get offered newer
-firmware. The same headers authenticate the other device routes:
+Devices also send `X-Firmware-Version: <semver>` so owners are offered newer
+firmware. The same headers authenticate every device route:
 
 | Route | Purpose |
 | --- | --- |
@@ -56,10 +57,12 @@ firmware. The same headers authenticate the other device routes:
 
 ## Firmware publishing
 
-`POST /firmware/releases` registers an OTA image (version, HTTPS URL, SHA-256,
-size, notes) for the device release pipeline. It's authorized with
-`Authorization: Bearer <FIRMWARE_PUBLISH_TOKEN>`. The image is hosted
-elsewhere, e.g. as a GitHub release asset.
+The device release pipeline calls `POST /firmware/releases` to register an OTA
+image (version, HTTPS URL, SHA-256, size, notes), authorized with
+`Authorization: Bearer <FIRMWARE_PUBLISH_TOKEN>`. The image itself lives
+elsewhere, such as a GitHub release asset.
 
-Public routes under `/public` need no authentication. Keep owner and device
+## Public routes
+
+Routes under `/public` need no authentication. Keep owner and device
 credentials out of URLs, examples, client-side logs and bug reports.

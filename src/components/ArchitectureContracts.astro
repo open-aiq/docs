@@ -1,0 +1,143 @@
+---
+// The contracts shared between repositories, as chips that open to show
+// who depends on them. Native <details>, so it works without JavaScript.
+
+const repos = { backend: 'Backend', dashboard: 'Dashboard', app: 'Mobile app', firmware: 'Firmware' } as const
+type Repo = keyof typeof repos
+
+const contracts: { title: string; detail: string; chips?: string[]; repos: Repo[] }[] = [
+  {
+    title: 'Routes and JSON',
+    detail: 'REST routes and their payloads.',
+    repos: ['backend', 'dashboard', 'app', 'firmware'],
+  },
+  {
+    title: 'Device headers',
+    detail: 'How a monitor proves who it is.',
+    chips: ['X-Device-ID', 'X-Device-Key', 'X-Firmware-Version'],
+    repos: ['firmware', 'backend'],
+  },
+  {
+    title: 'BLE commands',
+    detail: 'UUIDs, commands and reply framing.',
+    repos: ['firmware', 'app'],
+  },
+  {
+    title: 'AQI and units',
+    detail: 'AQI bands, units, sampling intervals and nullable location.',
+    repos: ['backend', 'dashboard', 'app', 'firmware'],
+  },
+]
+---
+
+<div class="contracts not-content">
+  {
+    contracts.map((c) => (
+      <details class="c-item">
+        <summary>
+          {c.title}
+          <svg viewBox="0 0 16 16" aria-hidden="true">
+            <path d="m5 6 3 3 3-3" />
+          </svg>
+        </summary>
+        <div class="c-body">
+          <p>{c.detail}</p>
+          {c.chips && (
+            <p class="c-chips">
+              {c.chips.map((chip) => (
+                <code>{chip}</code>
+              ))}
+            </p>
+          )}
+          <p class="c-repos">
+            <span class="sr-only">Check: </span>
+            {c.repos.map((r) => (
+              <span class="c-repo">{repos[r]}</span>
+            ))}
+          </p>
+        </div>
+      </details>
+    ))
+  }
+</div>
+
+<style>
+  .contracts {
+    --c-line: var(--sl-color-hairline);
+    --c-ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+    gap: 0.6rem;
+    margin: 1rem 0 2rem;
+    align-items: start;
+  }
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .c-item {
+    border: 1px solid var(--c-line);
+    border-radius: 1rem;
+    background: color-mix(in srgb, var(--sl-color-gray-6) 45%, var(--sl-color-bg));
+    box-shadow: 0 1px 2px rgb(59 39 22 / 0.05), 0 8px 20px -14px rgb(59 39 22 / 0.22);
+    transition: box-shadow 0.4s var(--c-ease), border-color 0.4s var(--c-ease);
+  }
+  .c-item[open] { border-color: color-mix(in srgb, var(--sl-color-accent) 40%, var(--c-line)); }
+  .c-item summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0.7rem 0.95rem;
+    font-weight: 600;
+    font-size: 0.9375rem;
+    color: var(--sl-color-white);
+    list-style: none;
+    cursor: pointer;
+  }
+  .c-item summary::-webkit-details-marker { display: none; }
+  .c-item summary:focus-visible { outline: 2px solid var(--sl-color-accent); outline-offset: 2px; border-radius: 1rem; }
+  .c-item summary svg {
+    flex: none;
+    width: 0.9rem;
+    height: 0.9rem;
+    fill: none;
+    stroke: var(--sl-color-text-accent);
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    transition: transform 0.4s var(--c-ease);
+  }
+  .c-item[open] summary svg { transform: rotate(180deg); }
+  .c-body { padding: 0 0.95rem 0.85rem; }
+  .c-body p { margin: 0; font-size: 0.875rem; color: var(--sl-color-gray-2); }
+  .c-chips,
+  .c-repos {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+    margin-top: 0.55rem !important;
+  }
+  .c-chips code {
+    padding: 0.05rem 0.4rem;
+    border: 1px solid var(--c-line);
+    border-radius: 0.4rem;
+    font-size: 0.75rem;
+  }
+  .c-repo {
+    padding: 0.1rem 0.55rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--sl-color-text-accent);
+    background: color-mix(in srgb, var(--sl-color-accent) 10%, transparent);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .contracts * { transition: none !important; }
+  }
+</style>

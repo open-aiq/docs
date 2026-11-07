@@ -6,8 +6,8 @@ description: RFC 9457 error responses and validation details.
 import ProblemCatalog from "../../../components/ProblemCatalog.astro";
 
 Errors use [RFC 9457 Problem Details](https://www.rfc-editor.org/rfc/rfc9457.html)
-with the `application/problem+json` media type. Branch on `type`, `status` and
-structured extensions; `detail` is for people, not parsing.
+(`application/problem+json`). Branch on `type`, `status` and structured
+extensions; `detail` is for people, not parsing.
 
 ```json
 {
@@ -31,16 +31,18 @@ structured extensions; `detail` is for people, not parsing.
 
 | Field      | Meaning                                                                       |
 | ---------- | ----------------------------------------------------------------------------- |
-| `type`     | Stable identifier and link to the problem category below.                     |
-| `title`    | Short title shared by every occurrence of that type.                          |
-| `status`   | HTTP status, repeated in the body for persisted responses and tooling.        |
-| `detail`   | Safe, occurrence-specific guidance intended for a person.                     |
-| `instance` | Request path for this occurrence; query strings and credentials are excluded. |
-| `errors`   | Optional list identifying invalid inputs.                                     |
+| `type`     | Stable identifier; links to its problem type below.                           |
+| `title`    | Short title, the same for every occurrence of that type.                      |
+| `status`   | HTTP status, repeated in the body for stored responses and tooling.           |
+| `detail`   | Safe, human-readable guidance for this occurrence.                            |
+| `instance` | Request path for this occurrence, without query string or credentials.        |
+| `errors`   | Optional list of invalid inputs.                                              |
 
-Each `errors` item has an `in` location (`body`, `query`, or `path`), an input
-`name`, a stable `code`, and a human-readable `detail`. One response can list
-several invalid fields.
+Each `errors` item has an `in` location (`body`, `query` or `path`), an input
+`name`, a stable `code` and a human-readable `detail`. One response can list
+several fields.
+
+Input problems map to these statuses:
 
 | Problem | Status |
 | --- | --- |
@@ -51,6 +53,6 @@ several invalid fields.
 
 ## Problem types
 
-Generated from the same Go registry that produces runtime responses.
+Generated from the Go registry that produces runtime responses.
 
 <ProblemCatalog />

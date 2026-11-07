@@ -1,7 +1,8 @@
 ---
-// Renders the version registry as release tables. Each cell lists a
-// component's exact versions in that line with their short label; expanding a
-// version shows its date, release page and downloads.
+// Renders the version registry as folding Sand & Sage cards, one per family.
+// The current family starts open. Each cell lists a component's exact versions
+// with their dates; opening a version shows its label, release page and
+// downloads.
 //
 // Tables: from 1.0 on, one table per major version (rows are its lines).
 // Below 1.0 every minor can break compatibility, so each 0.x line gets its own
@@ -33,7 +34,7 @@ type Line = {
 
 const COLUMNS = [
   { key: 'backend', label: 'Backend' },
-  { key: 'frontend', label: 'Frontend' },
+  { key: 'frontend', label: 'Dashboard' },
   { key: 'firmware', label: 'Device' },
   { key: 'app', label: 'App' },
 ]
@@ -71,6 +72,11 @@ const newestFirst = (a: string, b: string) => {
 }
 const size = (bytes: number) =>
   bytes >= 1024 * 1024 ? `${(bytes / 1024 / 1024).toFixed(1)} MB` : `${Math.max(1, Math.round(bytes / 1024))} KB`
+
+// The version is already on the cell, so drop it from download names:
+// server-v0.4.0-linux-amd64 → server-linux-amd64.
+const shortName = (name: string, version: string) =>
+  name.replace(new RegExp(`[-_.]?v?${version.replace(/\./g, '\\.')}`), '') || name
 
 type Item = { version: string; info?: string; date?: string; tagUrl: string; release?: Release }
 
@@ -110,222 +116,289 @@ for (const line of [...lines].sort((a, b) => newestFirst(a.line, b.line))) {
   if (table) table.lines.push(line)
   else tables.push({ title, id: `line-${title}`, lines: [line] })
 }
+
+const statusLabel: Record<string, string> = { current: 'Current', superseded: 'Earlier' }
+const friendlyDate = (iso: string) =>
+  new Date(`${iso}T00:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' })
+
+// The newest version of each component in a family, for the collapsed row.
+const peek = (line: Line) =>
+  COLUMNS.flatMap(({ key, label }) => {
+    const latest = itemsFor(line, key)?.[0]
+    return latest ? [{ label, version: latest.version }] : []
+  })
 ---
 
-<div class="release-registry">
+<div class="release-registry not-content">
   {
-    tables.map((table) => (
-      <section>
-        <h3 id={table.id}>
-          {table.title}
-          {table.lines.length === 1 && <span class={`status status-${table.lines[0].status}`}>{table.lines[0].status}</span>}
-        </h3>
-        <div class="scroll not-content">
-        <table>
-          <colgroup>
-            <col class="col-version" />
-            {COLUMNS.map(() => <col />)}
-          </colgroup>
-          <thead>
-            <tr>
-              <th scope="col">Version</th>
-              {COLUMNS.map((column) => (
-                <th scope="col">{column.label}</th>
+    tables.map((table) => {
+      const single = table.lines.length === 1
+      const status = single ? table.lines[0].status : table.lines.some((l) => l.status === 'current') ? 'current' : 'superseded'
+      return (
+        <details class={`family is-${status}`} id={table.id} open={status === 'current'}>
+          <summary>
+            <span class="family-name">{table.title}</span>
+            <span class={`status status-${status}`}>{statusLabel[status] ?? status}</span>
+            <span class="peek">
+              {peek(table.lines[0]).map((p) => (
+                <span>
+                  {p.label} <code>{p.version}</code>
+                </span>
               ))}
-            </tr>
-          </thead>
-          <tbody>
-            {table.lines.map((line) => (
-              <tr>
-                <th scope="row">
-                  <code>{line.line}</code>
-                  {table.lines.length > 1 && <span class={`status status-${line.status}`}>{line.status}</span>}
-                </th>
-                {COLUMNS.map(({ key }) => {
-                  const items = itemsFor(line, key)
-                  const component = components[key]
-                  if (!items) return <td class="none">—</td>
-                  return (
-                    <td>
-                      {items.length === 0 && <span class="muted">Not released</span>}
-                      {items.map((item) => (
-                        <details>
-                          <summary title={item.info}>
-                            <code>{item.version}</code>
-                            {item.date && <time datetime={item.date}>{item.date}</time>}
-                          </summary>
-                          <div class="detail">
-                            {item.info && <p class="info">{item.info}</p>}
-                            {item.release ? (
-                              <>
-                                <p>
-                                  {item.release.prerelease && 'Pre-release · '}
-                                  <a href={item.release.html_url}>Release notes</a>
-                                </p>
-                                {item.release.assets.length > 0 ? (
-                                  <ul>
-                                    {item.release.assets.map((asset) => (
-                                      <li>
-                                        <a href={asset.browser_download_url}>{asset.name}</a>{' '}
-                                        <span class="muted">{size(asset.size)}</span>
-                                      </li>
-                                    ))}
-                                  </ul>
-                                ) : (
-                                  <p class="muted">No downloads</p>
-                                )}
-                              </>
-                            ) : githubReleases.get(key) === null ? (
-                              <p>
-                                <a href={`https://github.com/${component.repo}/releases`}>GitHub releases</a>
-                              </p>
-                            ) : (
-                              <p>
-                                <a href={item.tagUrl}>Source at this tag</a>
-                                <span class="muted"> · no GitHub release</span>
-                              </p>
-                            )}
-                          </div>
-                        </details>
-                      ))}
-                      {line.status === 'current' &&
-                        (component.links ?? []).map((link) => (
-                          <a class="cell-link" href={link.url}>
-                            {link.label} ↗
-                          </a>
-                        ))}
-                    </td>
-                  )
-                })}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        </div>
-        {table.lines
-          .filter((line) => line.notes)
-          .map((line) => (
-            <p class="notes">
-              {table.lines.length > 1 && <strong>{line.line}: </strong>}
-              {line.notes}
-            </p>
-          ))}
-      </section>
-    ))
+            </span>
+            <svg class="chevron" viewBox="0 0 16 16" aria-hidden="true"><path d="m5 6 3 3 3-3" /></svg>
+          </summary>
+          <div class="family-body">
+            {table.lines
+              .filter((line) => line.notes)
+              .map((line) => (
+                <p class="notes">
+                  {!single && <strong>{line.line}: </strong>}
+                  {line.notes}
+                </p>
+              ))}
+            <div class="scroll">
+              <table>
+                <thead>
+                  <tr>
+                    {!single && <th scope="col">Line</th>}
+                    {COLUMNS.map((column) => (
+                      <th scope="col">{column.label}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {table.lines.map((line) => (
+                    <tr>
+                      {!single && (
+                        <th scope="row">
+                          <code>{line.line}</code>
+                        </th>
+                      )}
+                      {COLUMNS.map(({ key }) => {
+                        const items = itemsFor(line, key)
+                        const component = components[key]
+                        if (!items) return <td class="none" aria-label="Not part of this family">—</td>
+                        return (
+                          <td>
+                            {items.length === 0 && <span class="muted">Not yet</span>}
+                            {items.map((item) => (
+                              <details class="version">
+                                <summary title={item.info}>
+                                  <code>{item.version}</code>
+                                  {item.date && <time datetime={item.date}>{friendlyDate(item.date)}</time>}
+                                </summary>
+                                <div class="detail">
+                                  {item.info && <p class="info">{item.info}</p>}
+                                  {item.release ? (
+                                    <>
+                                      <p>
+                                        {item.release.prerelease && 'Pre-release · '}
+                                        <a href={item.release.html_url}>Release notes</a>
+                                      </p>
+                                      {item.release.assets.length > 0 && (
+                                        <ul>
+                                          {item.release.assets.map((asset) => (
+                                            <li>
+                                              <a href={asset.browser_download_url} title={asset.name}>{shortName(asset.name, item.version)}</a>
+                                              <span class="muted">{size(asset.size)}</span>
+                                            </li>
+                                          ))}
+                                        </ul>
+                                      )}
+                                    </>
+                                  ) : githubReleases.get(key) === null ? (
+                                    <p>
+                                      <a href={`https://github.com/${component.repo}/releases`}>GitHub releases</a>
+                                    </p>
+                                  ) : (
+                                    <p>
+                                      <a href={item.tagUrl}>Source at this tag</a>
+                                    </p>
+                                  )}
+                                </div>
+                              </details>
+                            ))}
+                            {line.status === 'current' &&
+                              (component.links ?? []).map((link) => (
+                                <a class="cell-link" href={link.url}>
+                                  {link.label} ↗
+                                </a>
+                              ))}
+                          </td>
+                        )
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </details>
+      )
+    })
   }
 </div>
 
 <style>
-  /* The table sits in .not-content, so Starlight's markdown styles (table
-     borders, <details> rails and markers) don't apply; these are plain cells. */
-  .release-registry h3 {
+  /* Each family is a raised Sand & Sage card that folds away. The tables sit in
+     .not-content, so Starlight's markdown styles don't apply to them. */
+  .release-registry {
+    --rr-line: var(--sl-color-hairline);
+    --rr-card: color-mix(in srgb, var(--sl-color-gray-6) 45%, var(--sl-color-bg));
+    --rr-ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+    display: grid;
+    gap: 0.75rem;
+    margin-top: 1rem;
+  }
+  .family {
+    border: 1px solid var(--rr-line);
+    border-radius: 1.25rem;
+    background: var(--rr-card);
+    box-shadow: 0 1px 2px rgb(59 39 22 / 0.05), 0 10px 28px -16px rgb(59 39 22 / 0.24);
+    transition: border-color 0.4s var(--rr-ease);
+  }
+  :global(:root[data-theme='dark']) .family {
+    box-shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 12px 30px -16px rgb(0 0 0 / 0.6);
+  }
+  .family.is-current { border-color: color-mix(in srgb, var(--sl-color-accent) 35%, var(--rr-line)); }
+  .family > summary {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.4rem 0.6rem;
+    padding: 0.85rem 1.1rem;
+    list-style: none;
+    cursor: pointer;
   }
-  .release-registry .scroll {
-    overflow-x: auto;
-    margin-top: 0.75rem;
+  .family > summary::-webkit-details-marker { display: none; }
+  .family > summary:focus-visible { outline: 2px solid var(--sl-color-accent); outline-offset: 2px; border-radius: 1.25rem; }
+  .family-name {
+    font-size: var(--sl-text-lg);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--sl-color-white);
+    font-variant-numeric: tabular-nums;
   }
-  /* Same grid in every table: a narrow Version column and four equal ones,
-     wide enough for "0.3.2  2026-09-16" on one line. Narrower screens scroll. */
-  .release-registry table {
+  .peek {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.2rem 0.9rem;
+    margin-inline-start: auto;
+    font-size: var(--sl-text-xs);
+    color: var(--sl-color-gray-3);
+  }
+  .family[open] .peek { display: none; }
+  .chevron {
+    flex: none;
+    width: 1rem;
+    height: 1rem;
+    fill: none;
+    stroke: var(--sl-color-text-accent);
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    transition: transform 0.4s var(--rr-ease);
+  }
+  .family[open] .chevron { transform: rotate(180deg); margin-inline-start: auto; }
+  .family-body { padding: 0 1.1rem 0.9rem; }
+  .notes {
+    margin: 0 0 0.5rem;
+    font-size: var(--sl-text-sm);
+    color: var(--sl-color-gray-2);
+  }
+
+  .status {
+    padding: 0.05rem 0.5rem;
+    border-radius: 999px;
+    font-size: var(--sl-text-2xs);
+    font-weight: 600;
+    color: var(--sl-color-gray-3);
+    background: color-mix(in srgb, var(--sl-color-gray-5) 40%, transparent);
+  }
+  .status-current {
+    color: var(--sl-color-text-accent);
+    background: color-mix(in srgb, var(--sl-color-accent) 12%, transparent);
+  }
+
+  .scroll { overflow-x: auto; }
+  table {
     width: 100%;
-    min-width: 42rem;
+    min-width: 30rem;
     table-layout: fixed;
     border-collapse: collapse;
     font-size: var(--sl-text-xs);
   }
-  .release-registry th,
-  .release-registry td {
+  th,
+  td {
     text-align: start;
-    vertical-align: top;
-    padding: 0.45rem 0.75rem 0.45rem 0;
-    border-bottom: 1px solid var(--sl-color-hairline);
-    white-space: nowrap;
+    vertical-align: middle;
+    padding: 0.55rem 0.75rem 0.55rem 0;
+    border-bottom: 1px solid var(--rr-line);
   }
-  .release-registry .col-version {
-    width: 4.5rem;
-  }
-  .release-registry thead th {
+  tbody tr:last-child > * { border-bottom: 0; }
+  thead th {
     font-size: var(--sl-text-2xs);
     font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.04em;
+    letter-spacing: 0.05em;
     color: var(--sl-color-gray-3);
-    border-bottom-color: var(--sl-color-gray-5);
   }
-  .release-registry tbody th {
-    font-weight: 600;
-  }
-  .release-registry code {
+  code {
     font-family: var(--sl-font-mono);
     font-size: inherit;
-    padding: 0.05rem 0.3rem;
-    border-radius: 0.25rem;
-    background: var(--sl-color-gray-6);
+    padding: 0.05rem 0.35rem;
+    border-radius: 0.3rem;
+    background: color-mix(in srgb, var(--sl-color-gray-5) 35%, transparent);
     color: var(--sl-color-white);
   }
-  .status {
-    display: inline-block;
-    margin-inline-start: 0.375rem;
-    padding: 0.05rem 0.45rem;
-    border-radius: 999px;
-    font-size: var(--sl-text-2xs);
-    font-weight: 500;
-    letter-spacing: 0.02em;
-    vertical-align: middle;
-    border: 1px solid var(--sl-color-gray-5);
-    color: var(--sl-color-gray-3);
-  }
-  .status-current {
-    border-color: var(--sl-color-accent);
-    color: var(--sl-color-text-accent);
-    background: var(--sl-color-accent-low);
-  }
-  .release-registry details + details {
-    margin-top: 0.15rem;
-  }
-  .release-registry summary {
+
+  /* Versions stack in a cell; each opens for notes and downloads. */
+  .version + .version { margin-top: 0.35rem; }
+  .version > summary {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.1rem;
+    width: fit-content;
+    list-style: none;
     cursor: pointer;
-    line-height: 1.6;
+    border-radius: 0.4rem;
   }
-  .release-registry summary::marker {
-    color: var(--sl-color-gray-4);
-  }
-  .release-registry summary time {
-    margin-inline-start: 0.4rem;
+  .version > summary::-webkit-details-marker { display: none; }
+  .version > summary:hover code,
+  .version[open] > summary code { background: color-mix(in srgb, var(--sl-color-accent) 16%, transparent); }
+  .version > summary:focus-visible { outline: 2px solid var(--sl-color-accent); outline-offset: 2px; }
+  .version time {
+    font-size: var(--sl-text-2xs);
     color: var(--sl-color-gray-3);
     font-variant-numeric: tabular-nums;
   }
-  .release-registry .detail {
-    margin: 0.2rem 0 0.5rem 1rem;
-    white-space: normal;
+  .detail {
+    margin: 0.35rem 0 0.25rem;
+    padding-inline-start: 0.6rem;
+    border-inline-start: 2px solid color-mix(in srgb, var(--sl-color-accent) 30%, transparent);
   }
-  .release-registry .detail p,
-  .release-registry .detail ul {
-    margin: 0.15rem 0 0;
-  }
-  .release-registry .detail ul {
-    padding-inline-start: 1rem;
-  }
-  .release-registry .detail .info {
-    color: var(--sl-color-white);
-    font-weight: 500;
-  }
-  .release-registry .detail a {
-    overflow-wrap: anywhere;
-  }
-  .release-registry .muted,
-  .release-registry .none {
-    color: var(--sl-color-gray-4);
-  }
-  .release-registry .cell-link {
+  .detail p,
+  .detail ul { margin: 0.2rem 0 0; }
+  .detail ul { display: grid; gap: 0.15rem; padding: 0; list-style: none; }
+  .detail li { display: flex; gap: 0.5rem; min-width: 0; }
+  .detail li a { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .detail li .muted { flex: none; margin-inline-start: auto; font-variant-numeric: tabular-nums; }
+  .detail .info { color: var(--sl-color-white); font-weight: 600; }
+  .release-registry a { color: var(--sl-color-text-accent); text-underline-offset: 3px; }
+  .muted,
+  .none { color: var(--sl-color-gray-4); }
+  .cell-link {
     display: inline-block;
-    margin-top: 0.35rem;
+    margin-top: 0.4rem;
+    font-weight: 600;
+    color: var(--sl-color-text-accent);
+    text-decoration: none;
   }
-  .release-registry .notes {
-    font-size: var(--sl-text-sm);
-    color: var(--sl-color-gray-2);
+  .cell-link:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .release-registry * { transition: none !important; }
   }
 </style>
