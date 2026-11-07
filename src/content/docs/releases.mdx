@@ -1,22 +1,20 @@
 ---
 title: Releases and versions
-description: Which Backend, Frontend, Device and App versions belong together, and where to download them.
+description: Which component versions belong together, and downloads.
 ---
 
 import ReleaseRegistry from "../../components/ReleaseRegistry.astro";
 
-Open AIQ ships four components that are versioned on their own: the backend
-API, the web dashboard (Frontend), the device firmware (Device), and the mobile
-app. A **version family** records which of their versions work together.
+The backend, dashboard (Frontend), firmware (Device) and mobile app are
+versioned separately. A **version family** records which versions work together.
 
-Each cell lists a component's exact versions in that family, with their
-release dates. Expand a version for its summary, release notes, and downloads. A dash means the component wasn't
-part of that family.
+Each cell lists a component's versions and release dates; expand one for notes
+and downloads. A dash means the component isn't in that family.
 
 ## Versions
 
-Before 1.0, every minor version can break compatibility, so each `0.x` family
-has its own table. From 1.0 on, there is one table per major version.
+Before 1.0, any minor version can break compatibility, so each `0.x` family
+has its own table. From 1.0, there's one per major version.
 
 <ReleaseRegistry />
 
@@ -30,11 +28,10 @@ Every component's `make release` checks it before building or tagging:
 - A **patch** release (`0.4.1`, `0.4.2`) is allowed when its `major.minor` is
   already registered for that component.
 - A new **major or minor** version must be registered first: add it to a new
-  or existing family, merge the change, and wait for this site to deploy.
-  Until then, the release is refused.
-- If the registry can't be reached, the release is refused too, so versions
-  never drift from what's documented here.
+  or existing family, merge, and wait for this site to deploy. Until then, the
+  release is refused.
+- If the registry can't be reached, the release is refused.
 
-New GitHub releases appear in the tables automatically when the site is next
-deployed. To give one a short label, add it to the family's `releases` list,
-for example `{ "version": "0.4.1", "info": "API fix" }`.
+New GitHub releases appear in the tables on the next deploy. To label one, add
+it to the family's `releases` list, for example
+`{ "version": "0.4.1", "info": "API fix" }`.

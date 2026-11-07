@@ -1,9 +1,9 @@
 ---
 title: Hardware and pin map
-description: Supported monitor parts, wiring, and flash layout.
+description: Parts, wiring and flash layout.
 ---
 
-The reference monitor uses:
+You'll need:
 
 - an ESP32-S3 board with at least 4 MB of flash
 - a Plantower **PMS5003** particulate sensor
@@ -20,16 +20,16 @@ The reference monitor uses:
 | Right button | active-low | 4 |
 | Left button | active-low | 5 |
 
-The OLED and SHT30 share one I²C bus at 400 kHz. Power both at 3.3 V and make
-sure the bus has pull-ups. The PMS5003 normally needs 5 V power and runs at
-9600 baud; check its UART logic levels. The buttons use the chip's internal
-pull-ups and connect to ground.
+- The OLED and SHT30 share one I²C bus at 400 kHz, powered at 3.3 V. The bus
+  needs pull-up resistors.
+- The PMS5003 normally needs 5 V and talks UART at 9600 baud. Check its UART
+  logic levels before connecting it to the ESP32-S3.
+- The buttons connect to ground and use the chip's internal pull-ups.
 
-At boot the firmware looks for the SHT30 at `0x44` or `0x45` and the OLED at
-`0x3C` or `0x3D`. A missing part is logged and the rest of the monitor keeps
-working. The OLED controller can't be detected from its address, so pick it at
-build time (`OLED_CONTROLLER=sh1106` or `ssd1306`), or download the matching
-release image.
+At boot, the firmware looks for the SHT30 at `0x44` or `0x45` and the OLED at
+`0x3C` or `0x3D`. A missing part is logged and the rest keeps working. The OLED
+controller can't be detected, so pick it at build time
+(`OLED_CONTROLLER=sh1106` or `ssd1306`) or download the matching release image.
 
 `src/board.rs` in the device repository is the source of truth for pins.
 
@@ -42,6 +42,6 @@ release image.
 
 ## Flash layout
 
-`partitions.csv` holds two 1.94 MB app slots (`ota_0`, `ota_1`) for
-[over-the-air updates](../ota/) with rollback, and fits any ESP32-S3 module with
-4 MB of flash or more. Provisioning lives in `nvs` and survives updates.
+`partitions.csv` holds two 1.94 MB app slots (`ota_0`, `ota_1`), which enable
+[over-the-air updates](../ota/) with rollback. It fits any ESP32-S3 module with
+4 MB of flash or more. Provisioning settings live in `nvs` and survive updates.

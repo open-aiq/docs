@@ -1,6 +1,6 @@
 ---
 title: System architecture
-description: Data and control flow across the Open AIQ repositories.
+description: How data and commands flow between repositories.
 ---
 
 ```text
@@ -21,28 +21,27 @@ ESP32-S3 firmware ── 128×64 OLED, two buttons
 
 ## Runtime boundaries
 
-- **Device → backend.** The monitor authenticates with a public device ID and a
-  secret key on every request, and reports its firmware version. It uploads
-  readings (`POST /data`) and important log events (`POST /device/logs`), and
-  asks for an approved update (`GET /device/ota`). See
+- **Device → backend.** Each request carries a public device ID, secret key
+  and firmware version. The monitor uploads readings (`POST /data`) and log
+  events (`POST /device/logs`), and checks for approved updates
+  (`GET /device/ota`). See
   [Telemetry](../device/telemetry/) and
   [Firmware updates and logs](../device/ota/).
-- **Owner → backend.** The dashboard and the mobile app send a Clerk session
-  token. Browser tokens are checked against the allowed origins; mobile tokens
-  are accepted when the backend allows native clients.
-- **Public.** Public device pages and the map need no sign-in and return only
-  data an owner has made public.
-- **Phone → device.** The mobile app talks to the monitor over Bluetooth
-  using newline-delimited text commands on the Nordic UART Service. Every
-  command requires an encrypted, passkey-paired link. See
+- **Owner → backend.** Dashboard and app send a Clerk session token. Browser
+  tokens are checked against allowed origins; mobile tokens are accepted when
+  native clients are enabled.
+- **Public.** Device pages and the map need no sign-in and return only data an
+  owner made public.
+- **Phone → device.** Newline-delimited text commands over the Nordic UART
+  Service, on an encrypted, passkey-paired link only. See
   [BLE provisioning](../device/ble/).
 
-The backend follows `routes → handler → service → repository → database`.
-Database migrations run automatically when the backend container starts.
+Backend requests follow `routes → handler → service → repository → database`.
+Migrations apply automatically when the backend container starts.
 
 ## Shared contracts
 
-A change to any of these must be checked in every affected repository:
+Changing one side alone can break the other, so check every affected repository:
 
 | Contract | Producers and consumers |
 | --- | --- |
@@ -51,5 +50,5 @@ A change to any of these must be checked in every affected repository:
 | BLE UUIDs, commands, and reply framing | firmware ↔ app |
 | AQI bands, units, sampling intervals, nullable location | all four |
 
-The API reference pages are generated from a committed snapshot of the
-backend's Swagger file, so a docs build does not depend on another repository.
+The API reference is generated from a committed snapshot of the backend's
+Swagger file, so the docs build on their own.

@@ -1,14 +1,14 @@
 ---
 title: Dashboard guide
-description: View readings and manage your Open AIQ devices.
+description: Check readings and manage your devices from the web.
 ---
 
-The dashboard has public routes at `/`, `/map`, and `/devices/:id`. Signed-in device management lives below `/app`.
+Anyone can open `/`, `/map`, and `/devices/:id`. Sign in to manage your own devices under `/app`.
 
-After signing in, the device list is scoped to your Clerk user. Select a device to view its current status and historical series. A device is considered offline when the backend has not received a reading for 20 minutes; a device that has never reported returns a no-readings state.
+Once signed in, you'll see the devices owned by your Clerk account. Pick one for its current reading and history. A device shows as offline after 20 minutes without a reading; one that has never reported shows a no-readings state.
 
-Historical views request one of four timelines: `daily` (hourly points), `weekly` or `monthly` (daily points), or `yearly` (monthly points). Hourly times are shown in your local time zone. Periods without readings appear as gaps in the chart, not as zero. Metrics include AQI, particulate concentrations, temperature, humidity, and heat index when available.
+History has four timelines: `daily` (hourly points), `weekly` or `monthly` (daily points), and `yearly` (monthly points). Hourly times use your local time zone. Missing data appears as a gap, not a zero. Charts cover AQI, particulates, temperature, humidity, and heat index when available.
 
-The [mobile app](./app/) shows the same views and adds live readings, firmware updates, and device logs.
+The [mobile app](./app/) has the same views, plus live readings, firmware updates, and device logs.
 
-Device settings let you rename a monitor, classify it as indoor/outdoor, control public visibility and location sharing, rotate its upload key, or delete it. Key rotation invalidates the old key immediately, so provision the new value onto the monitor at once.
+In device settings you can rename a monitor, mark it indoor or outdoor, make its readings public, share its location, rotate its upload key, or delete it. Rotating the key disables the old one immediately, so put the new key on the monitor right away.
