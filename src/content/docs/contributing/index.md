@@ -3,7 +3,11 @@ title: Contributor setup
 description: Build and check each Open AIQ repository.
 ---
 
-Thanks for helping out. Run commands from inside the repository you're changing, check `git status` first, and leave unrelated local changes alone.
+We're glad you're here. Fixes, docs tweaks, bug reports and questions all help, and small contributions count as much as big ones.
+
+If you get stuck or aren't sure where to start, open an issue or discussion in the relevant repository at [github.com/open-aiq](https://github.com/open-aiq). We're happy to help.
+
+Run commands inside the repository you're changing, check `git status` first, and leave unrelated local changes alone.
 
 ## Backend
 
@@ -17,7 +21,9 @@ make build
 make verify
 ```
 
-Edit Ent schemas under `internal/platform/ent/schema/` and regenerate with the Make target; don't edit generated files. The Docker image applies migrations on start; locally, run `make migration:apply`. Database start, seed and cleanup targets, and the release target, change persistent state, so check before running them.
+- Edit Ent schemas under `internal/platform/ent/schema/`, then regenerate with the Make target. Don't edit generated files.
+- The Docker image applies migrations on start; locally, run `make migration:apply`.
+- Database start, seed, cleanup and release targets change persistent state, so check before running them.
 
 ## Frontend
 
@@ -42,8 +48,8 @@ make verify     # format check, analyze, tests
 ```
 
 Keep BLE UUIDs, commands, reply framing and notification reassembly in
-`lib/ble/protocol.dart` in sync with the firmware. Tests run against an
-in-memory device emulator, so you can catch mismatches without hardware.
+`lib/ble/protocol.dart` in sync with the firmware. Tests use an in-memory
+device emulator, so you can catch mismatches without hardware.
 
 ## Device firmware
 
@@ -60,18 +66,19 @@ built with `MOCK_*` values. See [Firmware setup](../device/firmware/).
 
 ## Releases
 
-Every repository releases with `make release` from a clean `main`. A new major
-or minor version must first be registered in the [version registry](../releases/).
+Each repository releases with `make release` from a clean `main`. Register a
+new major or minor version in the [version registry](../releases/) first.
 Tagging and publishing are for maintainers.
 
 ## Documentation
 
-Uses Node 24:
+Needs Node 24.
 
 ```bash
-npm ci
-npm run sync:api -- ../backend/docs/swagger.yaml
-npm run validate
+make init
+make dev
+make api:sync   # after regenerating Swagger in the backend
+make verify
 ```
 
-Run the API sync after generating Swagger; CI checks the snapshot matches `open-aiq/backend` main. Don't hand-edit the generated endpoint pages or the snapshot.
+CI checks the API snapshot matches `open-aiq/backend` main. Don't hand-edit the generated endpoint pages or the snapshot.

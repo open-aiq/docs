@@ -5,7 +5,7 @@ description: Owner-approved updates with rollback, and device logs.
 
 ## Over-the-air updates
 
-Nothing installs without the owner's approval:
+Nothing installs until the owner approves it:
 
 1. A release is published to the backend with version, HTTPS download URL,
    SHA-256, and size.
@@ -14,16 +14,20 @@ Nothing installs without the owner's approval:
 4. After its next upload, or on `OTA:CHECK`, the monitor fetches the job from
    `GET /device/ota`.
 5. It streams the image over HTTPS into the inactive slot, checking size and
-   SHA-256 and reporting progress every 10%. The screen shows `Updating NN%`;
-   sampling and Bluetooth pause.
+   SHA-256 and reporting progress every 10%. Sampling and Bluetooth pause while
+   the screen shows `Updating NN%`.
 6. It switches slots, reports `installing`, and reboots.
 7. After its first successful upload, the new firmware marks itself good and
    reports `succeeded`.
 
-A failed download or checksum leaves the current firmware running and reports
-`failed`. If the new firmware crashes or can't upload within 5 minutes, the
-bootloader rolls back and reports `failed: rolled back to <version>`. You can
-cancel an approved job until the download starts.
+If something fails, the monitor stays safe:
+
+- A failed download or checksum leaves the current firmware running and reports
+  `failed`.
+- If the new firmware crashes or can't upload within 5 minutes, the bootloader
+  rolls back and reports `failed: rolled back to <version>`.
+
+You can cancel an approved job until the download starts.
 
 Job states: `approved`, `downloading`, `installing`, then `succeeded`,
 `failed`, or `cancelled`.

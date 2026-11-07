@@ -4,8 +4,8 @@ description: Sampling, uploads and the OLED screens.
 ---
 
 The monitor samples both sensors every **20 seconds** and shows the result
-immediately. Every **10 minutes** it averages the window (about 30 samples),
-recomputes AQI from the averages, and uploads one reading. The first upload
+right away. Every **10 minutes** it averages the window (about 30 samples),
+recomputes AQI from those averages, and uploads one reading. The first upload
 follows the first complete sample after boot.
 
 ```json
@@ -21,15 +21,15 @@ follows the first complete sample after boot.
   `X-Device-Key`, and `X-Firmware-Version`.
 - `location` is omitted when no coordinates are set; the app sends the phone's
   location during setup.
-- If Wi-Fi is down (after one reconnect attempt) or the window has no complete
-  sample, the upload is skipped until the next tick.
+- If Wi-Fi is still down after one reconnect attempt, or the window has no
+  complete sample, the monitor skips that upload and tries again next tick.
 - After each successful upload, the monitor sends pending
   [log events](../ota/#device-logs) and checks for an
   [approved firmware update](../ota/).
 
 ## Live readings
 
-Over Bluetooth, `LIVE:ON` streams every 20-second sample with the same field
+Over Bluetooth, `LIVE:ON` streams every 20-second sample, using the same field
 names and `null` for a missing sensor. See
 [BLE provisioning](../ble/#command-reference).
 
@@ -39,13 +39,15 @@ The buttons cycle three screens:
 
 | Screen | Shows |
 | --- | --- |
-| AQI | AQI value, category, and PM2.5 in µg/m³ |
-| Climate | Temperature, humidity, and feels-like (heat index) |
-| Status | Wi-Fi state and IP, last upload result and age |
+| AQI | AQI value<br />Category<br />PM2.5 in µg/m³ |
+| Climate | Temperature<br />Humidity<br />Feels-like (heat index) |
+| Status | Wi-Fi state and IP<br />Last upload result and age |
 
-Temporary overlays: `PAIRING` with the passkey during pairing, and
-`Updating NN%` during a firmware update. Before the first sample, the AQI
-screen shows `warming up...`. An unprovisioned monitor shows
-`Hold both btns: pair`.
+You may also see:
+
+- `PAIRING` with the passkey, during Bluetooth pairing
+- `Updating NN%`, during a firmware update
+- `warming up...` on the AQI screen, before the first sample
+- `Hold both btns: pair`, on a monitor that isn't set up yet
 
 The AQI category uses the [US EPA bands](../../concepts/aqi/).

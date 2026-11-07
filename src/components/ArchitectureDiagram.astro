@@ -1,0 +1,536 @@
+---
+// The system at a glance in the Sand & Sage style. The mobile app and the
+// monitor sit side by side, paired over Bluetooth; they and the web dashboard
+// all talk to the cloud backend, which keeps everything in the database.
+//
+// Every part and trail is a button. Hovering, tapping or focusing one shows
+// its card below the scene. Without JavaScript, all cards are listed, so the
+// details stay readable, searchable and in reading order. Motion is slow and
+// gentle, and stops under prefers-reduced-motion.
+
+interface Card {
+  id: string
+  title: string
+  tech?: string
+  body: string
+  hint?: string
+  chips?: string[]
+  links?: { href: string; label: string }[]
+}
+
+const cards: Card[] = [
+  {
+    id: 'overview',
+    title: 'How it fits together',
+    body: 'Your monitor, phone and dashboard all talk to one backend, which keeps everything safe in a database.',
+    hint: 'Tap any part or path to see what it does.',
+  },
+  {
+    id: 'device',
+    title: 'Air monitor',
+    tech: 'ESP32-S3 · Rust',
+    body: 'Reads a PMS5003 particle sensor and an SHT30 climate sensor every 20 seconds, and shows the result on its little screen right away.',
+    links: [{ href: '/device/hardware/', label: 'Hardware and pin map' }],
+  },
+  {
+    id: 'phone',
+    title: 'Mobile app',
+    tech: 'Flutter',
+    body: 'Sets up a new monitor over Bluetooth, then shows your readings wherever you are.',
+    links: [{ href: '/dashboard/app/', label: 'Mobile app' }],
+  },
+  {
+    id: 'web',
+    title: 'Web dashboard',
+    tech: 'React',
+    body: 'Manage your devices, browse their history and choose what to share. Public device pages and the map need no sign-in.',
+    links: [{ href: '/dashboard/', label: 'Dashboard guide' }],
+  },
+  {
+    id: 'cloud',
+    title: 'Backend',
+    tech: 'Go',
+    body: 'One API for everything. Requests flow from routes to handler, service and repository, and database migrations apply on their own when it starts.',
+    chips: ['routes → handler → service → repository'],
+    links: [{ href: '/reference/api/', label: 'API conventions' }],
+  },
+  {
+    id: 'db',
+    title: 'Database',
+    tech: 'PostgreSQL',
+    body: 'Holds readings, devices and logs. Only the backend talks to it, and public pages only ever see what an owner chose to share.',
+    links: [{ href: '/concepts/data-security/', label: 'Data and security' }],
+  },
+  {
+    id: 'ble',
+    title: 'Phone ↔ monitor',
+    tech: 'Bluetooth LE',
+    body: 'Short text commands over the Nordic UART Service, on an encrypted link that only opens after passkey pairing.',
+    chips: ['Nordic UART', 'Passkey pairing'],
+    links: [{ href: '/device/ble/', label: 'BLE provisioning' }],
+  },
+  {
+    id: 'device-cloud',
+    title: 'Monitor → backend',
+    tech: 'HTTPS',
+    body: 'Every 10 minutes the monitor uploads an averaged reading, sends any log events and asks whether an approved update is waiting. Each request carries its ID, secret key and firmware version.',
+    chips: ['POST /data', 'POST /device/logs', 'GET /device/ota', 'X-Device-ID', 'X-Device-Key', 'X-Firmware-Version'],
+    links: [
+      { href: '/device/telemetry/', label: 'Telemetry' },
+      { href: '/device/ota/', label: 'Firmware updates and logs' },
+    ],
+  },
+  {
+    id: 'phone-cloud',
+    title: 'Mobile app → backend',
+    tech: 'Clerk',
+    body: 'The app signs in with a Clerk session token. Phones have no web origin, so the backend accepts them when native clients are turned on.',
+    chips: ['CLERK_ALLOW_NATIVE_CLIENTS'],
+    links: [{ href: '/concepts/data-security/', label: 'Data and security' }],
+  },
+  {
+    id: 'web-cloud',
+    title: 'Dashboard → backend',
+    tech: 'Clerk',
+    body: "The dashboard sends a Clerk session token, and the backend checks it came from one of our allowed sites.",
+    chips: ['CLERK_AUTHORIZED_PARTIES'],
+    links: [{ href: '/concepts/data-security/', label: 'Data and security' }],
+  },
+]
+const byId = Object.fromEntries(cards.map((c) => [c.id, c]))
+
+const nodes = {
+  phone: { x: 120, y: 170 },
+  device: { x: 290, y: 170 },
+  web: { x: 205, y: 345 },
+  cloud: { x: 530, y: 255 },
+  db: { x: 715, y: 255 },
+}
+
+const flows: { id: string; d: string; speed: number; both?: boolean }[] = [
+  { id: 'phone-cloud', d: 'M118,92 C170,30 400,40 488,186', speed: 5, both: true },
+  { id: 'device-cloud', d: 'M340,150 C400,150 440,190 478,214', speed: 3.6 },
+  { id: 'web-cloud', d: 'M262,322 C340,322 410,300 476,276', speed: 4, both: true },
+  { id: 'db', d: 'M592,236 C630,226 655,226 678,232', speed: 3, both: true },
+]
+
+const hit = (id: string): astroHTML.JSX.SVGAttributes & { 'data-id': string } => ({
+  class: 'a-hit',
+  'data-id': id,
+  role: 'button',
+  tabindex: 0,
+  'aria-label': byId[id].title,
+  'aria-controls': `arch-card-${id}`,
+  'aria-pressed': 'false',
+})
+---
+
+<figure class="arch not-content" data-arch>
+  <svg viewBox="40 24 760 400" role="group" aria-label="System architecture: tap a part or a path for details">
+    <!-- Trails -->
+    {
+      flows.map((f) => (
+        <g {...hit(f.id)} style={`--speed:${f.speed}s`}>
+          <path class="a-target" d={f.d} />
+          <path class="a-trail" d={f.d} />
+          <path class="a-pulse" d={f.d} />
+          {f.both && <path class="a-pulse is-back" d={f.d} />}
+        </g>
+      ))
+    }
+
+    <!-- Bluetooth between phone and monitor -->
+    <g {...hit('ble')}>
+      <path class="a-target" d="M168,132 C200,116 210,116 238,132" />
+      <rect class="a-target-box" x="150" y="90" width="108" height="50" rx="20" />
+      <path class="a-trail is-ble" d="M168,132 C200,116 210,116 238,132" />
+      <path class="a-wave" d="M160,104 a14,14 0 0 1 0,22" />
+      <path class="a-wave is-late" d="M168,96 a24,24 0 0 1 0,38" />
+      <path class="a-wave" d="M248,104 a14,14 0 0 0 0,22" />
+      <path class="a-wave is-late" d="M240,96 a24,24 0 0 0 0,38" />
+    </g>
+
+    <!-- Mobile app -->
+    <g {...hit('phone')} transform={`translate(${nodes.phone.x},${nodes.phone.y})`}>
+      <ellipse class="a-ground" cy="34" rx="52" ry="9" />
+      <g class="a-float">
+        <rect class="a-body" x="-26" y="-74" width="52" height="96" rx="12" />
+        <rect class="a-screen-dark" x="-20" y="-66" width="40" height="76" rx="7" />
+        <circle class="a-track" cx="0" cy="-38" r="12" />
+        <circle class="a-ring" cx="0" cy="-38" r="12" transform="rotate(-90 0 -38)" />
+        <rect class="a-bar is-accent" x="-12" y="-16" width="24" height="4" rx="2" />
+        <rect class="a-bar" x="-12" y="-7" width="15" height="4" rx="2" />
+        <rect class="a-home" x="-7" y="14" width="14" height="3" rx="1.5" />
+      </g>
+    </g>
+
+    <!-- Air monitor, the friendly face from the roadmap -->
+    <g {...hit('device')} transform={`translate(${nodes.device.x},${nodes.device.y})`}>
+      <ellipse class="a-ground" cy="34" rx="56" ry="9" />
+      <g class="a-float is-offset">
+        <path class="a-antenna" d="M30,-46 v-18" />
+        <circle class="a-led" cx="30" cy="-67" r="4" />
+        <rect class="a-body" x="-48" y="-48" width="96" height="70" rx="18" />
+        <rect class="a-screen" x="-34" y="-36" width="50" height="34" rx="8" />
+        <circle class="a-eye" cx="-18" cy="-23" r="3" />
+        <circle class="a-eye" cx="0" cy="-23" r="3" />
+        <path class="a-smile" d="M-17,-13 q8,7 16,0" />
+        <circle class="a-knob" cx="32" cy="-28" r="5" />
+        <circle class="a-knob" cx="32" cy="-11" r="5" />
+        <path class="a-vent" d="M-30,10 h44" />
+      </g>
+    </g>
+
+    <!-- Web dashboard -->
+    <g {...hit('web')} transform={`translate(${nodes.web.x},${nodes.web.y})`}>
+      <ellipse class="a-ground" cy="34" rx="60" ry="9" />
+      <g class="a-float is-late">
+        <path class="a-stand" d="M0,8 v14 M-18,24 h36" />
+        <rect class="a-body" x="-56" y="-64" width="112" height="72" rx="10" />
+        <rect class="a-screen-dark" x="-48" y="-56" width="96" height="56" rx="6" />
+        <path class="a-track-path" d="M-38,-14 a15,15 0 0 1 30,0" />
+        <path class="a-gauge" d="M-38,-14 a15,15 0 0 1 22,-13" />
+        <path class="a-needle" d="M-23,-14 l7,-9" />
+        <path class="a-line" d="M2,-14 l10,-10 l9,5 l12,-16" />
+        <circle class="a-dot" cx="33" cy="-35" r="3" />
+      </g>
+    </g>
+
+    <!-- Cloud backend -->
+    <g {...hit('cloud')} transform={`translate(${nodes.cloud.x},${nodes.cloud.y})`}>
+      <ellipse class="a-ground" cy="34" rx="70" ry="10" />
+      <g class="a-float is-offset">
+        <path
+          class="a-body"
+          d="M-48,16 a26,26 0 0 1 -4,-51 a34,34 0 0 1 64,-14 a28,28 0 0 1 42,30 a20,20 0 0 1 -6,35 z"
+        />
+        <rect class="a-slot" x="-30" y="-30" width="60" height="14" rx="4" />
+        <rect class="a-slot" x="-30" y="-10" width="60" height="14" rx="4" />
+        <circle class="a-led" cx="20" cy="-23" r="3" />
+        <circle class="a-led is-late" cx="20" cy="-3" r="3" />
+        <path class="a-slot-line" d="M-22,-23 h22 M-22,-3 h14" />
+      </g>
+    </g>
+
+    <!-- Database -->
+    <g {...hit('db')} transform={`translate(${nodes.db.x},${nodes.db.y})`}>
+      <ellipse class="a-ground" cy="34" rx="48" ry="9" />
+      <g class="a-float">
+        {[0, 1, 2].map((i) => {
+          const y = 14 - i * 24
+          return (
+            <g>
+              <path class="a-disc" d={`M-34,${y - 16} v16 a34,10 0 0 0 68,0 v-16`} />
+              <ellipse class="a-disc-top" cy={y - 16} rx="34" ry="10" />
+            </g>
+          )
+        })}
+        <circle class="a-led" cx="22" cy="6" r="2.6" />
+      </g>
+    </g>
+  </svg>
+
+  <div class="a-panel" aria-live="polite">
+    {
+      cards.map((card) => (
+        <section class={`a-card${card.id === 'overview' ? ' is-active is-overview' : ''}`} id={`arch-card-${card.id}`} data-id={card.id}>
+          <header>
+            <h3>{card.title}</h3>
+            {card.tech && <span class="a-tech">{card.tech}</span>}
+          </header>
+          <p>
+            {card.body}
+            {card.hint && <span class="a-hint"> {card.hint}</span>}
+          </p>
+          {card.chips && (
+            <ul class="a-chips">
+              {card.chips.map((chip) => (
+                <li>
+                  <code>{chip}</code>
+                </li>
+              ))}
+            </ul>
+          )}
+          {card.links && (
+            <p class="a-links">
+              {card.links.map((link) => (
+                <a href={link.href}>
+                  {link.label}
+                  <svg viewBox="0 0 16 16" aria-hidden="true">
+                    <path d="M3 8h10M9 4l4 4-4 4" />
+                  </svg>
+                </a>
+              ))}
+            </p>
+          )}
+        </section>
+      ))
+    }
+  </div>
+  <button class="a-toggle" type="button" aria-expanded="false" hidden>Show all details</button>
+</figure>
+
+<script>
+  for (const fig of document.querySelectorAll<HTMLElement>('[data-arch]')) {
+    const hits = [...fig.querySelectorAll<SVGGElement>('.a-hit')]
+    const cards = [...fig.querySelectorAll<HTMLElement>('.a-card')]
+    const toggle = fig.querySelector<HTMLButtonElement>('.a-toggle')!
+    let pinned = 'overview'
+
+    const show = (id: string) => {
+      fig.classList.toggle('has-active', id !== 'overview')
+      for (const h of hits) {
+        const on = h.dataset.id === id
+        h.classList.toggle('is-active', on)
+        h.setAttribute('aria-pressed', String(on && pinned === id))
+      }
+      for (const c of cards) c.classList.toggle('is-active', c.dataset.id === id)
+    }
+
+    for (const h of hits) {
+      const id = h.dataset.id!
+      h.addEventListener('pointerenter', (e) => e.pointerType === 'mouse' && show(id))
+      h.addEventListener('focus', () => show(id))
+      h.addEventListener('blur', () => show(pinned))
+      h.addEventListener('click', () => {
+        pinned = pinned === id ? 'overview' : id
+        show(pinned)
+      })
+      h.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault()
+          h.dispatchEvent(new MouseEvent('click'))
+        }
+      })
+    }
+    fig.querySelector('svg')!.addEventListener('pointerleave', () => show(pinned))
+
+    toggle.hidden = false
+    toggle.addEventListener('click', () => {
+      const all = !fig.classList.contains('is-all')
+      fig.classList.toggle('is-all', all)
+      toggle.setAttribute('aria-expanded', String(all))
+      toggle.textContent = all ? 'Show less' : 'Show all details'
+    })
+
+    fig.classList.add('is-ready')
+  }
+</script>
+
+<style>
+  .arch {
+    --a-ink: #3b2716;
+    --a-sand: #f1e6d6;
+    --a-paper: #fbf6ee;
+    --a-wood: #c9a77c;
+    --a-sage: var(--oa-sage, #6f7f5c);
+    --a-accent: var(--sl-color-accent);
+    --a-screen-dark: #3b2716;
+    --a-trail: color-mix(in srgb, var(--sl-color-gray-4) 70%, transparent);
+    --a-ground: color-mix(in srgb, var(--sl-color-accent) 10%, transparent);
+    --a-card: color-mix(in srgb, var(--sl-color-gray-6) 45%, var(--sl-color-bg));
+    --a-line: var(--sl-color-hairline);
+    --a-ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+    --a-shadow: 0 1px 2px rgb(59 39 22 / 0.05), 0 10px 28px -14px rgb(59 39 22 / 0.24);
+    margin: 1.5rem 0 2.5rem;
+    padding: clamp(0.75rem, 3vw, 1.5rem);
+    border: 1px solid var(--a-line);
+    border-radius: 1.5rem;
+    background:
+      radial-gradient(circle at 8% 15%, color-mix(in srgb, var(--sl-color-accent) 12%, transparent), transparent 42%),
+      radial-gradient(circle at 95% 90%, color-mix(in srgb, var(--a-sage) 12%, transparent), transparent 42%),
+      var(--a-card);
+    box-shadow: var(--a-shadow);
+  }
+  :global(:root[data-theme='dark']) .arch {
+    --a-ink: #f4e9da;
+    --a-sand: #3a2c1f;
+    --a-paper: #46362a;
+    --a-wood: #8a6a48;
+    --a-screen-dark: #21170e;
+    --a-ground: color-mix(in srgb, var(--sl-color-accent) 14%, transparent);
+    --a-shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 12px 30px -14px rgb(0 0 0 / 0.6);
+  }
+  .arch svg {
+    display: block;
+    width: 100%;
+    height: auto;
+    overflow: visible;
+  }
+
+  /* Scene */
+  .a-ground { fill: var(--a-ground); transition: fill 0.4s var(--a-ease); }
+  .a-body { fill: var(--a-sand); stroke: var(--a-wood); stroke-width: 2.5; stroke-linejoin: round; }
+  .a-screen { fill: var(--a-sage); }
+  .a-screen-dark { fill: var(--a-screen-dark); }
+  .a-eye { fill: #fff; }
+  .a-smile { fill: none; stroke: #fff; stroke-width: 2; stroke-linecap: round; }
+  .a-knob { fill: var(--a-wood); }
+  .a-vent,
+  .a-slot-line { fill: none; stroke: var(--a-wood); stroke-width: 2.5; stroke-linecap: round; opacity: 0.7; }
+  .a-antenna,
+  .a-stand { fill: none; stroke: var(--a-wood); stroke-width: 3; stroke-linecap: round; }
+  .a-led { fill: #f2c46d; }
+  .a-track { fill: none; stroke: color-mix(in srgb, var(--a-sand) 25%, transparent); stroke-width: 4; }
+  .a-track-path { fill: none; stroke: color-mix(in srgb, var(--a-sand) 25%, transparent); stroke-width: 5; stroke-linecap: round; }
+  .a-ring { fill: none; stroke: var(--a-sage); stroke-width: 4; stroke-linecap: round; stroke-dasharray: 75.4; stroke-dashoffset: 26; }
+  .a-gauge { fill: none; stroke: var(--a-sage); stroke-width: 5; stroke-linecap: round; }
+  .a-needle { fill: none; stroke: #f1e6d6; stroke-width: 2.5; stroke-linecap: round; }
+  .a-line { fill: none; stroke: #e3c9a3; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+  .a-dot { fill: #e3c9a3; }
+  .a-bar { fill: color-mix(in srgb, #f1e6d6 45%, transparent); }
+  .a-bar.is-accent { fill: #e3c9a3; }
+  .a-home { fill: var(--a-wood); }
+  .a-slot { fill: var(--a-paper); stroke: var(--a-wood); stroke-width: 1.5; }
+  .a-disc { fill: var(--a-sage); }
+  .a-disc-top { fill: color-mix(in srgb, var(--a-sage) 55%, #fff); stroke: var(--a-sage); stroke-width: 1.5; }
+
+  .a-trail { fill: none; stroke: var(--a-trail); stroke-width: 2.5; stroke-linecap: round; stroke-dasharray: 1 8; transition: stroke 0.4s var(--a-ease); }
+  .a-trail.is-ble { stroke: var(--a-sage); }
+  .a-pulse {
+    fill: none;
+    stroke: var(--a-accent);
+    stroke-width: 6;
+    stroke-linecap: round;
+    stroke-dasharray: 0 90;
+    animation: a-pulse var(--speed) linear infinite;
+  }
+  .a-pulse.is-back { stroke: var(--a-sage); stroke-width: 5; stroke-dashoffset: 45; animation-direction: reverse; }
+  .a-wave { fill: none; stroke: var(--a-sage); stroke-width: 2.5; stroke-linecap: round; }
+
+  /* Hotspots: a wide invisible target, then a gentle highlight. */
+  .a-target { fill: none; stroke: transparent; stroke-width: 26; stroke-linecap: round; }
+  .a-target-box { fill: transparent; }
+  .a-hit {
+    cursor: pointer;
+    outline: none;
+    transition: opacity 0.4s var(--a-ease);
+  }
+  .arch.has-active .a-hit:not(.is-active) { opacity: 0.4; }
+  .a-hit.is-active .a-ground { fill: color-mix(in srgb, var(--sl-color-accent) 24%, transparent); }
+  .a-hit.is-active .a-trail { stroke: var(--a-accent); }
+  .a-hit:focus-visible .a-ground,
+  .a-hit:focus-visible .a-target-box { stroke: var(--a-accent); stroke-width: 2; stroke-dasharray: 3 4; }
+  .a-hit:focus-visible .a-target { stroke: color-mix(in srgb, var(--sl-color-accent) 14%, transparent); }
+
+  /* Cards: all listed without JavaScript, one at a time with it. */
+  .a-panel {
+    display: grid;
+    gap: 0.75rem;
+    margin-top: 0.75rem;
+  }
+  .arch.is-ready:not(.is-all) .a-card:not(.is-active) { display: none; }
+  .arch.is-ready:not(.is-all) .a-panel { min-height: 9.5rem; }
+  .arch.is-all .a-card.is-overview { display: none; }
+  .a-card {
+    padding: 1rem 1.15rem;
+    border: 1px solid var(--a-line);
+    border-radius: 1rem;
+    background: var(--sl-color-bg);
+    box-shadow: 0 1px 2px rgb(59 39 22 / 0.04);
+    animation: a-rise 0.5s var(--a-ease);
+  }
+  .a-card header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem 0.6rem;
+  }
+  .a-card h3 {
+    margin: 0;
+    font-size: 1rem;
+    letter-spacing: -0.01em;
+    color: var(--sl-color-white);
+  }
+  .a-tech {
+    padding: 0.1rem 0.55rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--sl-color-text-accent);
+    background: color-mix(in srgb, var(--sl-color-accent) 10%, transparent);
+  }
+  .a-hint { display: none; }
+  .arch.is-ready .a-hint { display: inline; }
+  .a-card p {
+    margin: 0.4rem 0 0;
+    color: var(--sl-color-gray-2);
+  }
+  .a-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin: 0.6rem 0 0;
+    padding: 0;
+    list-style: none;
+  }
+  .a-chips code {
+    padding: 0.1rem 0.45rem;
+    border: 1px solid var(--a-line);
+    border-radius: 0.4rem;
+    font-size: 0.75rem;
+    background: var(--a-card);
+  }
+  .a-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 1rem;
+  }
+  .a-links a {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--sl-color-text-accent);
+    text-decoration: none;
+  }
+  .a-links a:hover { text-decoration: underline; text-underline-offset: 3px; }
+  .a-links svg {
+    width: 0.85rem;
+    height: 0.85rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    transition: transform 0.4s var(--a-ease);
+  }
+  .a-links a:hover svg { transform: translateX(3px); }
+
+  .a-toggle {
+    display: block;
+    margin: 0.75rem auto 0;
+    padding: 0.35rem 0.9rem;
+    border: 1px solid var(--a-line);
+    border-radius: 999px;
+    font: inherit;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--sl-color-text-accent);
+    background: transparent;
+    cursor: pointer;
+  }
+  .a-toggle[hidden] { display: none; }
+  .a-toggle:hover { background: color-mix(in srgb, var(--sl-color-accent) 8%, transparent); }
+  .a-toggle:focus-visible,
+  .a-links a:focus-visible { outline: 2px solid var(--sl-color-accent); outline-offset: 3px; }
+
+  /* Slow, gentle motion, as on the roadmap. */
+  .a-float { animation: a-float 7s ease-in-out infinite; }
+  .a-float.is-offset { animation-delay: -2.3s; }
+  .a-float.is-late { animation-delay: -4.6s; }
+  .a-led { animation: a-glow 4s ease-in-out infinite; }
+  .a-led.is-late { animation-delay: -2s; }
+  .a-wave { animation: a-glow 5s ease-in-out infinite; }
+  .a-wave.is-late { animation-delay: -1.2s; }
+
+  @keyframes a-float { 50% { transform: translateY(-4px); } }
+  @keyframes a-glow { 0%, 100% { opacity: 0.35; } 50% { opacity: 1; } }
+  @keyframes a-pulse { to { stroke-dashoffset: -180; } }
+  @keyframes a-rise { from { opacity: 0; transform: translateY(4px); } }
+
+  @media (prefers-reduced-motion: reduce) {
+    .arch * { animation: none !important; transition: none !important; }
+  }
+</style>

@@ -1,0 +1,16 @@
+---
+title: System architecture
+description: How data and commands flow between repositories.
+---
+
+import ArchitectureContracts from "../../components/ArchitectureContracts.astro";
+import ArchitectureDiagram from "../../components/ArchitectureDiagram.astro";
+
+<ArchitectureDiagram />
+
+## Before you change a contract
+
+These are shared between repositories, so a change on one side can break
+another. Open one to see which repositories to check.
+
+<ArchitectureContracts />

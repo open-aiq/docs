@@ -1,37 +1,31 @@
 ---
 title: Releases and versions
-description: Which component versions belong together, and downloads.
+description: Which versions work together, with notes and downloads.
 ---
 
 import ReleaseRegistry from "../../components/ReleaseRegistry.astro";
 
-The backend, dashboard (Frontend), firmware (Device) and mobile app are
-versioned separately. A **version family** records which versions work together.
-
-Each cell lists a component's versions and release dates; expand one for notes
-and downloads. A dash means the component isn't in that family.
-
-## Versions
-
-Before 1.0, any minor version can break compatibility, so each `0.x` family
-has its own table. From 1.0, there's one per major version.
+Each part of Open AIQ has its own version. A **family** groups the versions
+that work together. Open a version for its notes and downloads.
 
 <ReleaseRegistry />
 
-## How releases are registered
+## Making a release
 
 The registry lives in
 [`src/data/versions.json`](https://github.com/open-aiq/docs/blob/main/src/data/versions.json)
 and is published at [`/versions.json`](https://docs.air-iq.net/versions.json).
-Every component's `make release` checks it before building or tagging:
+Every `make release` checks it first:
 
-- A **patch** release (`0.4.1`, `0.4.2`) is allowed when its `major.minor` is
-  already registered for that component.
-- A new **major or minor** version must be registered first: add it to a new
-  or existing family, merge, and wait for this site to deploy. Until then, the
-  release is refused.
-- If the registry can't be reached, the release is refused.
+- **Patch** (`0.4.1`): goes ahead if its `major.minor` is already registered.
+- **Major or minor**: add it to a family, merge, and wait for this site to
+  deploy. Until then, the release is refused.
+- **Registry unreachable**: the release is refused.
 
-New GitHub releases appear in the tables on the next deploy. To label one, add
-it to the family's `releases` list, for example
+Before 1.0, each minor version is its own family; from 1.0, there's one per
+major. New GitHub releases show up on the next deploy. To give one a short
+label, add it to the family's `releases` list, like
 `{ "version": "0.4.1", "info": "API fix" }`.
+
+New to releasing? Ask in an issue on the component's repository and we'll
+walk through it with you.
