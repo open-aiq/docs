@@ -1,0 +1,46 @@
+{
+  "board": "https://github.com/orgs/open-aiq/projects/1",
+  "org": "open-aiq",
+  "phases": [
+    {
+      "id": 1,
+      "label": "phase:1",
+      "title": "First device for fellow devs",
+      "persona": "dev",
+      "who": "For fellow devs",
+      "summary": "Can build the app and flash firmware? Everything's ready for you.",
+      "groups": [
+        { "title": "Prototype 2 PCB on the ESP32 devkit", "issues": ["hardware#1"] },
+        { "title": "A smoother, calmer mobile app", "issues": ["app#16"] },
+        { "title": "Healthier sensor, more accurate readings", "issues": ["device#17"] }
+      ]
+    },
+    {
+      "id": 2,
+      "label": "phase:2",
+      "title": "Ready for makers",
+      "persona": "maker",
+      "who": "For makers",
+      "summary": "Build it by hand, and it all works. We've got you.",
+      "groups": [
+        { "title": "A look and feel of our own", "issues": ["docs#6"] },
+        { "title": "Tools to look after every monitor", "issues": ["backend#18"] },
+        { "title": "The app in the stores", "issues": ["app#20"] },
+        { "title": "The community map on your phone", "issues": ["app#23"] }
+      ]
+    },
+    {
+      "id": 3,
+      "label": "phase:3",
+      "title": "Ready for everyone",
+      "persona": "everyone",
+      "who": "For everyone",
+      "summary": "The finished monitor, for anyone curious about their air. No tech skills needed.",
+      "groups": [
+        { "title": "A compact, purpose-built circuit board", "issues": ["hardware#6"] },
+        { "title": "A 3D-printed home for it", "issues": ["hardware#7"] },
+        { "title": "Battery power, so it can go anywhere", "issues": ["hardware#8"] }
+      ]
+    }
+  ]
+}

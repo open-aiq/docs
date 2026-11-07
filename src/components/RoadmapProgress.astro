@@ -1,0 +1,543 @@
+---
+// Roadmap progress by phase, built from `phase:N` issues at build time (see
+// src/lib/roadmap.ts), laid out as a winding trail with an illustration of
+// who each stop is for. Motion is slow and gentle, and switches off under
+// prefers-reduced-motion.
+import { loadRoadmap } from '../lib/roadmap'
+import RoadmapPersona from './RoadmapPersona.astro'
+
+const roadmap = await loadRoadmap()
+const pct = (value: number | null) => (value === null ? null : Math.round(value * 100))
+const overall = pct(roadmap.progress)
+const current = roadmap.phases.find((phase) => phase.status === 'current')
+const RADIUS = 52
+const CIRCUMFERENCE = 2 * Math.PI * RADIUS
+const statusLabel = { complete: 'Done', current: "We're on it", planned: 'Coming up' } as const
+const updated = new Date(roadmap.updatedAt).toLocaleDateString('en', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' })
+
+function groupStatus(group: { progress: number | null; done: number; total: number }) {
+  if (group.progress === null) return ''
+  if (group.progress >= 1) return 'done'
+  if (group.progress > 0) return `${Math.round(group.progress * 100)}% done`
+  return 'not started yet'
+}
+---
+
+<section class="roadmap not-content" aria-labelledby="roadmap-heading">
+  <div class="rm-hero rm-raised">
+    <div class="rm-ring" style={`--c:${CIRCUMFERENCE};--target:${CIRCUMFERENCE * (1 - (roadmap.progress ?? 0))};--pct:${overall ?? 0}`}>
+      <svg viewBox="0 0 120 120" aria-hidden="true">
+        <defs>
+          <linearGradient id="rm-ring-gradient" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="var(--rm-from)" />
+            <stop offset="100%" stop-color="var(--rm-to)" />
+          </linearGradient>
+        </defs>
+        <circle class="rm-ring-track" cx="60" cy="60" r={RADIUS} />
+        <circle class="rm-ring-value" cx="60" cy="60" r={RADIUS} stroke-dasharray={CIRCUMFERENCE} />
+      </svg>
+      <div class="rm-ring-label">
+        {overall === null ? <span class="rm-ring-number">—</span> : <span class="rm-ring-number rm-count" aria-hidden="true" />}
+        <span class="sr-only">{overall === null ? 'Progress unavailable' : `${overall}% complete`}</span>
+        <span class="rm-ring-caption">overall</span>
+      </div>
+    </div>
+    <div class="rm-hero-text">
+      <p class="rm-eyebrow">Our roadmap</p>
+      <h2 id="roadmap-heading">
+        {current ? <>Right now: {current.title}</> : 'Every phase is done. Thank you for coming along.'}
+      </h2>
+      <p class="rm-hero-meta">
+        {overall === null
+          ? "Live progress is taking a break. The board has the latest."
+          : 'Follow along, or lend a hand.'}
+      </p>
+      <div class="rm-actions">
+        <a class="rm-button" href={roadmap.board}>
+          See what we're working on
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4" /></svg>
+        </a>
+        <span class="rm-updated">Updated {updated}</span>
+      </div>
+    </div>
+  </div>
+
+  <p class="rm-start" aria-hidden="true"><span>Start</span></p>
+  <ol class="rm-journey">
+    {
+      roadmap.phases.map((phase, index) => {
+        const value = pct(phase.progress)
+        const last = index === roadmap.phases.length - 1
+        return (
+          <li class={`rm-stop is-${phase.status}${index % 2 ? ' is-flipped' : ''}${last ? ' is-last' : ''}`} style={`--i:${index}`}>
+            <div class="rm-scene">
+              <RoadmapPersona persona={phase.persona} />
+              <span class="rm-who">{phase.who}</span>
+            </div>
+            <div class="rm-path" aria-hidden="true">
+              <div class="rm-node">
+                {phase.status === 'complete' ? (
+                  <svg viewBox="0 0 16 16"><path d="m3.5 8.5 3 3 6-7" /></svg>
+                ) : last ? (
+                  <svg viewBox="0 0 16 16"><path d="M4 14V2.5M4 3h8l-2 3 2 3H4" /></svg>
+                ) : (
+                  phase.id
+                )}
+              </div>
+              {phase.status === 'current' && <span class="rm-here">You are here</span>}
+              {!last && (
+                <svg class="rm-trail" viewBox="0 0 40 100" preserveAspectRatio="none">
+                  <path d="M20 0C34 18 6 32 20 50S6 82 20 100" vector-effect="non-scaling-stroke" />
+                </svg>
+              )}
+            </div>
+            <article class="rm-card rm-raised">
+              <header class="rm-card-head">
+                <div>
+                  <p class="rm-kicker">Phase {phase.id}</p>
+                  <h3>{phase.title}</h3>
+                </div>
+                <div class="rm-card-stats">
+                  <span class={`rm-pill rm-pill-${phase.status}`}>{statusLabel[phase.status]}</span>
+                  {value !== null && <span class="rm-percent">{value}%</span>}
+                </div>
+              </header>
+              <p class="rm-summary">{phase.summary}</p>
+              {value !== null && (
+                <div
+                  class="rm-bar"
+                  role="progressbar"
+                  aria-label={`${phase.title} progress`}
+                  aria-valuemin="0"
+                  aria-valuemax="100"
+                  aria-valuenow={value}
+                >
+                  <span class="rm-fill" style={`--p:${phase.progress}`} />
+                </div>
+              )}
+              <ul class="rm-groups">
+                {phase.groups.map((group) => (
+                  <li class={group.progress !== null && group.progress >= 1 ? 'is-done' : ''}>
+                    <span class="rm-dot" style={`--p:${group.progress ?? 0}`} aria-hidden="true">
+                      {group.progress !== null && group.progress >= 1 && (
+                        <svg viewBox="0 0 16 16"><path d="m4 8.5 2.5 2.5 5.5-6" /></svg>
+                      )}
+                    </span>
+                    <span class="rm-group-title">{group.title}</span>
+                    {groupStatus(group) && <span class="sr-only">({groupStatus(group)})</span>}
+                  </li>
+                ))}
+              </ul>
+              <a class="rm-follow" href={phase.url}>
+                Follow along on GitHub
+                <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4" /></svg>
+              </a>
+            </article>
+          </li>
+        )
+      })
+    }
+  </ol>
+</section>
+
+<style>
+  @property --rm-n {
+    syntax: '<integer>';
+    initial-value: 0;
+    inherits: false;
+  }
+
+  .roadmap {
+    --rm-from: var(--sl-color-accent);
+    --rm-to: var(--oa-sage, #6f7f5c);
+    --rm-done: var(--oa-sage, #6f7f5c);
+    --rm-card: color-mix(in srgb, var(--sl-color-gray-6) 45%, var(--sl-color-bg));
+    --rm-line: var(--sl-color-hairline);
+    --rm-muted: var(--sl-color-gray-3);
+    --rm-ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+    --rm-shadow: 0 1px 2px rgb(59 39 22 / 0.05), 0 10px 28px -14px rgb(59 39 22 / 0.24);
+    --rm-shadow-lift: 0 2px 4px rgb(59 39 22 / 0.06), 0 26px 48px -20px rgb(59 39 22 / 0.34);
+    margin-block: 1.5rem 2.5rem;
+  }
+  :global(:root[data-theme='dark']) .roadmap {
+    --rm-shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 12px 30px -14px rgb(0 0 0 / 0.6);
+    --rm-shadow-lift: 0 2px 4px rgb(0 0 0 / 0.35), 0 28px 50px -20px rgb(0 0 0 / 0.75);
+  }
+
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  /* Raised surfaces: a soft resting shadow, lifting gently on hover. */
+  .rm-raised {
+    border: 1px solid var(--rm-line);
+    background: var(--rm-card);
+    box-shadow: var(--rm-shadow);
+    transition: transform 0.5s var(--rm-ease), box-shadow 0.5s var(--rm-ease), border-color 0.5s var(--rm-ease);
+  }
+  .rm-raised:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--rm-shadow-lift);
+    border-color: color-mix(in srgb, var(--sl-color-gray-4) 50%, var(--rm-line));
+  }
+
+  /* Hero */
+  .rm-hero {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: clamp(1.25rem, 4vw, 2.25rem);
+    padding: clamp(1.25rem, 4vw, 2rem);
+    border-radius: 1.5rem;
+    overflow: hidden;
+    background:
+      radial-gradient(circle at 8% 15%, color-mix(in srgb, var(--rm-from) 14%, transparent), transparent 42%),
+      radial-gradient(circle at 95% 90%, color-mix(in srgb, var(--rm-to) 12%, transparent), transparent 42%),
+      var(--rm-card);
+    animation: rm-rise 1.1s var(--rm-ease) backwards;
+  }
+  .rm-hero-text { min-width: 0; }
+  .rm-eyebrow,
+  .rm-kicker {
+    margin: 0;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--sl-color-text-accent);
+  }
+  .rm-hero h2 {
+    margin: 0.25rem 0 0.4rem;
+    font-size: clamp(1.35rem, 3.5vw, 1.75rem);
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+    color: var(--sl-color-white);
+  }
+  .rm-hero-meta { margin: 0; color: var(--sl-color-gray-2); }
+  .rm-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem 1rem;
+    margin-top: 1.1rem;
+  }
+  .rm-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 1.1rem;
+    border-radius: 999px;
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: #fff;
+    text-decoration: none;
+    background: linear-gradient(120deg, var(--sl-color-accent), color-mix(in srgb, var(--sl-color-accent) 60%, var(--rm-to)));
+    box-shadow: 0 8px 22px -10px color-mix(in srgb, var(--sl-color-accent) 70%, transparent);
+    transition: transform 0.4s var(--rm-ease), box-shadow 0.4s var(--rm-ease);
+  }
+  :global(:root[data-theme='dark']) .rm-button { color: #2a1d10; }
+  .rm-button:hover { transform: translateY(-2px); box-shadow: 0 14px 28px -12px color-mix(in srgb, var(--sl-color-accent) 80%, transparent); }
+  .rm-button svg,
+  .rm-follow svg {
+    width: 0.9rem;
+    height: 0.9rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    transition: transform 0.4s var(--rm-ease);
+  }
+  .rm-button:hover svg,
+  .rm-follow:hover svg { transform: translateX(3px); }
+  .rm-button:focus-visible,
+  .rm-follow:focus-visible { outline: 2px solid var(--sl-color-accent); outline-offset: 3px; }
+  .rm-updated { font-size: 0.8125rem; color: var(--rm-muted); }
+
+  /* Ring */
+  .rm-ring { position: relative; flex: none; width: clamp(7.5rem, 22vw, 9.5rem); aspect-ratio: 1; }
+  .rm-ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+  .rm-ring circle { fill: none; stroke-width: 10; }
+  .rm-ring-track { stroke: color-mix(in srgb, var(--sl-color-gray-5) 60%, transparent); }
+  .rm-ring-value {
+    stroke: url(#rm-ring-gradient);
+    stroke-linecap: round;
+    stroke-dashoffset: var(--target);
+    animation: rm-ring 2.4s 0.3s var(--rm-ease) both;
+  }
+  .rm-ring-label {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-content: center;
+    text-align: center;
+  }
+  .rm-ring-number {
+    font-size: clamp(1.6rem, 5vw, 2.1rem);
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    color: var(--sl-color-white);
+    font-variant-numeric: tabular-nums;
+  }
+  .rm-count {
+    --rm-n: var(--pct);
+    counter-reset: rm-n var(--rm-n);
+    animation: rm-count 2.4s 0.3s var(--rm-ease) both;
+  }
+  .rm-count::after { content: counter(rm-n) '%'; }
+  .rm-ring-caption { font-size: 0.75rem; color: var(--rm-muted); }
+
+  /* Journey */
+  .rm-start {
+    display: flex;
+    justify-content: center;
+    margin: 2.25rem 0 0.5rem;
+  }
+  .rm-start span {
+    padding: 0.2rem 0.75rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--sl-color-text-accent);
+    background: color-mix(in srgb, var(--sl-color-accent) 10%, transparent);
+  }
+  .rm-journey {
+    container-type: inline-size;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .rm-stop {
+    display: grid;
+    grid-template-columns: 2.5rem minmax(0, 1fr);
+    grid-template-areas: 'path scene' 'path card';
+    column-gap: 1rem;
+    margin: 0;
+    padding-bottom: 2.5rem;
+    animation: rm-rise 1.1s calc(0.2s + var(--i) * 0.15s) var(--rm-ease) backwards;
+  }
+  .rm-stop.is-last { padding-bottom: 0; }
+  .rm-scene { grid-area: scene; display: grid; justify-items: center; gap: 0.4rem; padding: 0.25rem 0 1rem; }
+  .rm-scene :global(.persona) { max-width: 15rem; }
+  .rm-who { font-size: 0.8125rem; font-weight: 600; color: var(--sl-color-gray-2); }
+  .rm-path {
+    grid-area: path;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: -2.5rem; /* the trail runs on to the next stop */
+  }
+  .rm-stop.is-last .rm-path { margin-bottom: 0; }
+  .rm-card { grid-area: card; }
+
+  @container (min-width: 40rem) {
+    .rm-stop {
+      grid-template-columns: minmax(0, 1fr) 3rem minmax(0, 1.25fr);
+      grid-template-areas: 'scene path card';
+      column-gap: 1.5rem;
+      align-items: start;
+    }
+    .rm-stop.is-flipped {
+      grid-template-columns: minmax(0, 1.25fr) 3rem minmax(0, 1fr);
+      grid-template-areas: 'card path scene';
+    }
+    .rm-path { align-self: stretch; }
+    .rm-here { display: block; }
+    .rm-scene { padding-top: 0.5rem; }
+  }
+
+  .rm-trail {
+    flex: 1;
+    width: 2.5rem;
+    min-height: 3rem;
+    overflow: visible;
+  }
+  .rm-trail path {
+    fill: none;
+    stroke: color-mix(in srgb, var(--sl-color-gray-4) 70%, transparent);
+    stroke-width: 2.5;
+    stroke-linecap: round;
+    stroke-dasharray: 1 8;
+  }
+  .is-current .rm-trail path { stroke: color-mix(in srgb, var(--sl-color-accent) 55%, transparent); }
+  .is-complete .rm-trail path { stroke: var(--rm-done); stroke-dasharray: none; }
+
+  .rm-node {
+    position: relative;
+    z-index: 1;
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    margin-top: 1rem;
+    border-radius: 50%;
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: var(--rm-muted);
+    background: var(--sl-color-bg);
+    border: 2px solid var(--rm-line);
+    box-shadow: var(--rm-shadow);
+  }
+  .rm-node svg { width: 1rem; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+  .is-complete .rm-node { color: #fff; background: var(--rm-done); border-color: var(--rm-done); }
+  :global(:root[data-theme='dark']) .is-complete .rm-node { color: #1f2617; }
+  .is-current .rm-node {
+    color: #fff;
+    background: var(--sl-color-accent);
+    border-color: var(--sl-color-accent);
+    box-shadow: 0 0 0 6px color-mix(in srgb, var(--sl-color-accent) 14%, transparent), var(--rm-shadow);
+  }
+  :global(:root[data-theme='dark']) .is-current .rm-node { color: #2a1d10; }
+  .rm-here {
+    display: none;
+    position: absolute;
+    top: 3.9rem;
+    z-index: 2;
+    padding: 0.15rem 0.55rem;
+    border-radius: 999px;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    white-space: nowrap;
+    color: var(--sl-color-text-accent);
+    background: var(--sl-color-bg);
+    border: 1px solid color-mix(in srgb, var(--sl-color-accent) 30%, transparent);
+    box-shadow: var(--rm-shadow);
+    animation: rm-bob 6s ease-in-out infinite;
+  }
+
+  .rm-card {
+    padding: 1.25rem 1.35rem 1.3rem;
+    border-radius: 1.1rem;
+  }
+  .is-current .rm-card {
+    border-color: color-mix(in srgb, var(--sl-color-accent) 40%, var(--rm-line));
+    box-shadow: var(--rm-shadow), 0 0 0 4px color-mix(in srgb, var(--sl-color-accent) 8%, transparent);
+  }
+  .is-current .rm-card:hover { box-shadow: var(--rm-shadow-lift), 0 0 0 4px color-mix(in srgb, var(--sl-color-accent) 8%, transparent); }
+  .rm-card-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 0.75rem; }
+  .rm-card h3 { margin: 0.15rem 0 0; font-size: 1.125rem; letter-spacing: -0.01em; color: var(--sl-color-white); }
+  .is-planned .rm-kicker { color: var(--rm-muted); }
+  .rm-card-stats { display: flex; align-items: center; gap: 0.6rem; flex: none; }
+  .rm-percent { font-weight: 700; font-variant-numeric: tabular-nums; color: var(--sl-color-white); }
+  .rm-pill {
+    padding: 0.15rem 0.6rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .rm-pill-current { color: var(--sl-color-text-accent); background: color-mix(in srgb, var(--sl-color-accent) 13%, transparent); }
+  .rm-pill-complete { color: var(--rm-done); background: color-mix(in srgb, var(--rm-done) 13%, transparent); }
+  .rm-pill-planned { color: var(--rm-muted); background: color-mix(in srgb, var(--sl-color-gray-5) 45%, transparent); }
+  .rm-summary { margin: 0.5rem 0 1rem; color: var(--sl-color-gray-2); font-size: 0.9rem; line-height: 1.6; }
+
+  /* Progress bar */
+  .rm-bar {
+    position: relative;
+    height: 0.45rem;
+    border-radius: 999px;
+    overflow: hidden;
+    background: color-mix(in srgb, var(--sl-color-gray-5) 45%, transparent);
+  }
+  .rm-fill {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(90deg, var(--rm-from), var(--rm-to));
+    transform-origin: left;
+    transform: scaleX(var(--p));
+    animation: rm-grow 2.2s calc(0.5s + var(--i) * 0.15s) var(--rm-ease) both;
+  }
+  .is-complete .rm-fill { background: var(--rm-done); }
+
+  /* Groups */
+  .rm-groups { list-style: none; margin: 1.1rem 0 0; padding: 0; display: grid; gap: 0.55rem; }
+  .rm-groups li {
+    display: grid;
+    grid-template-columns: 1.1rem minmax(0, 1fr);
+    align-items: center;
+    gap: 0.7rem;
+    margin: 0;
+    font-size: 0.9rem;
+    color: var(--sl-color-gray-1);
+  }
+  .rm-groups .is-done .rm-group-title { color: var(--sl-color-gray-3); }
+  .rm-dot {
+    display: grid;
+    place-items: center;
+    width: 1.1rem;
+    height: 1.1rem;
+    border-radius: 50%;
+    background: conic-gradient(var(--rm-from) calc(var(--p) * 1turn), color-mix(in srgb, var(--sl-color-gray-5) 65%, transparent) 0);
+    -webkit-mask: radial-gradient(circle, transparent 0.32rem, #000 0.33rem);
+    mask: radial-gradient(circle, transparent 0.32rem, #000 0.33rem);
+  }
+  .is-done .rm-dot { background: var(--rm-done); -webkit-mask: none; mask: none; }
+  .rm-dot svg { width: 0.75rem; fill: none; stroke: #fff; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+  :global(:root[data-theme='dark']) .rm-dot svg { stroke: #1f2617; }
+
+  /* One link per phase */
+  .rm-follow {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    margin-top: 1.2rem;
+    padding: 0.45rem 0.95rem;
+    border-radius: 999px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-decoration: none;
+    color: var(--sl-color-text-accent);
+    background: color-mix(in srgb, var(--sl-color-accent) 9%, transparent);
+    border: 1px solid color-mix(in srgb, var(--sl-color-accent) 22%, transparent);
+    transition: background 0.4s var(--rm-ease), border-color 0.4s var(--rm-ease);
+  }
+  .rm-follow:hover {
+    background: color-mix(in srgb, var(--sl-color-accent) 15%, transparent);
+    border-color: color-mix(in srgb, var(--sl-color-accent) 38%, transparent);
+  }
+
+  @media (max-width: 34em) {
+    .rm-hero { flex-direction: column; align-items: flex-start; }
+    .rm-card-head { flex-direction: column; gap: 0.4rem; }
+  }
+
+  /* Reveal phases softly as they scroll into view, where supported. */
+  @supports (animation-timeline: view()) {
+    .rm-stop {
+      animation: rm-rise linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 70%;
+    }
+    .rm-fill {
+      animation: rm-grow linear both;
+      animation-timeline: view();
+      animation-range: entry 40% cover 45%;
+    }
+  }
+
+  @keyframes rm-rise { from { opacity: 0; transform: translateY(10px); } }
+  @keyframes rm-bob { 50% { transform: translateY(-3px); } }
+  @keyframes rm-grow { from { transform: scaleX(0); } }
+  @keyframes rm-ring { from { stroke-dashoffset: var(--c); } }
+  @keyframes rm-count { from { --rm-n: 0; } }
+
+  @media (prefers-reduced-motion: reduce) {
+    .roadmap *,
+    .roadmap *::before,
+    .roadmap *::after {
+      animation: none !important;
+      transition: none !important;
+    }
+    .rm-raised:hover { transform: none; }
+  }
+</style>

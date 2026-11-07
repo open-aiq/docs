@@ -3,6 +3,9 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches: [main]
+  schedule:
+    # Daily rebuild keeps release and roadmap progress current.
+    - cron: "17 3 * * *"
   workflow_dispatch:
 
 permissions:
