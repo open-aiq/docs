@@ -40,7 +40,9 @@
         "firmware": [
           { "version": "0.3.0", "info": "Rust, OTA" }
         ],
-        "app": []
+        "app": [
+          { "version": "0.4.1", "info": "First release" }
+        ]
       }
     },
     {
