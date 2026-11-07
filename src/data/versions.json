@@ -30,7 +30,8 @@
       "notes": "Device logs, owner-approved OTA firmware updates, mobile app sign-in, Rust ESP-IDF firmware with secure BLE pairing, local-time history charts.",
       "releases": {
         "backend": [
-          { "version": "0.4.0", "info": "Logs, OTA" }
+          { "version": "0.4.0", "info": "Logs, OTA" },
+          { "version": "0.4.1", "info": "App-only keys" }
         ],
         "frontend": [
           { "version": "0.4.0", "info": "Local time" }
