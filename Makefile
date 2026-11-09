@@ -3,7 +3,7 @@ NPM ?= npm
 # Swagger file to copy in with api:sync.
 SWAGGER ?= ../backend/docs/swagger.yaml
 
-.PHONY: help init dev build preview types\:check versions\:check links\:check api\:sync api\:check verify clean
+.PHONY: help init dev build preview types\:check versions\:check links\:check api\:sync api\:check tokens\:sync tokens\:check icons\:sync verify clean
 
 ## help: Show available commands
 help:
@@ -49,7 +49,21 @@ api\:check:
 	$(NPM) run check:api
 
 ##.
-## verify: Run versions:check, types:check, build and links:check
+## tokens:sync: Generate the docs, frontend and app theme files from src/data/tokens.json
+tokens\:sync:
+	$(NPM) run sync:tokens
+
+## tokens:check: Check that every generated theme file matches src/data/tokens.json
+tokens\:check:
+	$(NPM) run check:tokens
+
+## icons:sync: Copy the app's Material icons into src/data/icons.json (needs Flutter and fonttools), then run tokens:sync
+icons\:sync:
+	python3 scripts/extract-icons.py
+	$(NPM) run sync:tokens
+
+##.
+## verify: Run versions:check, tokens:check, types:check, build and links:check
 verify:
 	$(NPM) run validate
 

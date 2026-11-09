@@ -1,0 +1,116 @@
+/* Generated from docs/src/data/tokens.json by `make tokens:sync` in docs/. Don't edit. */
+/* Starlight's :root holds its dark defaults; light values are set below. */
+:root {
+  --sl-color-accent-low: #f1e6d6;
+  --sl-color-accent: #8a5d3b;
+  --sl-color-accent-high: #3b2716;
+  --sl-color-text-accent: #7a5233;
+  --oa-accent: #8a5d3b;
+  --oa-sage: #6f7f5c;
+  --oa-ink: #3b2716;
+  --oa-sand: #f1e6d6;
+  --oa-wood: #c9a77c;
+  --oa-highlight: #f2c46d;
+  --oa-ground: #8a5d3b1a;
+  --oa-shadow: #3b271614;
+  --oa-online: #5f7a3f;
+  --oa-shadow-rest: 0 1px 2px rgb(59 39 22 / 5%), 0 10px 28px -14px rgb(59 39 22 / 24%);
+  --oa-shadow-lift: 0 2px 4px rgb(59 39 22 / 6%), 0 26px 48px -20px rgb(59 39 22 / 34%);
+  --oa-primary: #8a5d3b;
+  --oa-on-primary: #ffffff;
+  --oa-primary-container: #f1e6d6;
+  --oa-on-primary-container: #3b2716;
+  --oa-secondary: #6f7f5c;
+  --oa-on-secondary: #ffffff;
+  --oa-secondary-container: #e1e7d6;
+  --oa-on-secondary-container: #2f3a24;
+  --oa-tertiary: #8a6418;
+  --oa-tertiary-container: #fbe7be;
+  --oa-on-tertiary-container: #3f2e05;
+  --oa-error: #b3261e;
+  --oa-on-error: #ffffff;
+  --oa-surface: #fbf8f3;
+  --oa-on-surface: #3b2716;
+  --oa-on-surface-variant: #6b5a49;
+  --oa-surface-container-lowest: #ffffff;
+  --oa-surface-container-low: #f7f1e8;
+  --oa-surface-container: #f3ebdf;
+  --oa-surface-container-high: #efe5d6;
+  --oa-surface-container-highest: #eadfcd;
+  --oa-outline: #b3926b;
+  --oa-outline-variant: #e6d9c6;
+  --oa-raised: #ffffff;
+  --oa-radius-sm: 0.5rem;
+  --oa-radius-md: 0.75rem;
+  --oa-radius-lg: 1rem;
+  --oa-radius-xl: 1.25rem;
+  --oa-radius-card: 1.5rem;
+  --oa-radius-sheet: 1.75rem;
+  --oa-duration-resize: 300ms;
+  --oa-duration-lift: 500ms;
+  --oa-duration-fade: 700ms;
+  --oa-duration-chart: 800ms;
+  --oa-duration-pulse: 1400ms;
+  --oa-duration-float: 7000ms;
+  --oa-ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --oa-aqi-1-bg: #a8e05f;
+  --oa-aqi-1-fg: #718b3a;
+  --oa-aqi-2-bg: #fdd64b;
+  --oa-aqi-2-fg: #a57f23;
+  --oa-aqi-3-bg: #ff9b57;
+  --oa-aqi-3-fg: #b25826;
+  --oa-aqi-4-bg: #fe6a69;
+  --oa-aqi-4-fg: #af2c3b;
+  --oa-aqi-5-bg: #a97abc;
+  --oa-aqi-5-fg: #634675;
+  --oa-aqi-6-bg: #a87383;
+  --oa-aqi-6-fg: #683e51;
+}
+
+:root[data-theme='dark'] {
+  --sl-color-accent-low: #3a2c1f;
+  --sl-color-accent: #d6b88f;
+  --sl-color-accent-high: #f4e9da;
+  --sl-color-text-accent: #e3c9a3;
+  --oa-accent: #d6b88f;
+  --oa-sage: #a3b18a;
+  --oa-ink: #f4e9da;
+  --oa-sand: #3a2c1f;
+  --oa-wood: #8a6a48;
+  --oa-highlight: #f2c46d;
+  --oa-ground: #d6b88f24;
+  --oa-shadow: #00000040;
+  --oa-online: #a3b18a;
+  --oa-shadow-rest: 0 1px 2px rgb(0 0 0 / 30%), 0 12px 30px -14px rgb(0 0 0 / 60%);
+  --oa-shadow-lift: 0 2px 4px rgb(0 0 0 / 35%), 0 28px 50px -20px rgb(0 0 0 / 75%);
+  --oa-primary: #d6b88f;
+  --oa-on-primary: #3b2716;
+  --oa-primary-container: #4a3826;
+  --oa-on-primary-container: #f1e6d6;
+  --oa-secondary: #a3b18a;
+  --oa-on-secondary: #1f2716;
+  --oa-secondary-container: #3a4430;
+  --oa-on-secondary-container: #e1e7d6;
+  --oa-tertiary: #f2c46d;
+  --oa-tertiary-container: #4d3b12;
+  --oa-on-tertiary-container: #fbe7be;
+  --oa-error: #f2b8b5;
+  --oa-on-error: #601410;
+  --oa-surface: #1b1611;
+  --oa-on-surface: #f4e9da;
+  --oa-on-surface-variant: #cdbca5;
+  --oa-surface-container-lowest: #15110d;
+  --oa-surface-container-low: #211b15;
+  --oa-surface-container: #261f18;
+  --oa-surface-container-high: #2e261d;
+  --oa-surface-container-highest: #372d23;
+  --oa-outline: #8a6a48;
+  --oa-outline-variant: #3f3327;
+  --oa-raised: #261f18;
+}
+
+:root[data-theme='light'] {
+  --sl-color-bg: #fbf8f3;
+  --sl-color-bg-nav: #f7f1e8;
+  --sl-color-bg-sidebar: #f7f1e8;
+}
