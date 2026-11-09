@@ -1,0 +1,37 @@
+---
+// The smiling monitor, with the same geometry as the app's
+// MonitorIllustration (app/lib/widgets/monitor_illustration.dart) and the
+// dashboard's MonitorIllustration.jsx.
+interface Props { size?: number; label?: string }
+const { size = 120, label } = Astro.props;
+---
+<svg
+  class="monitor"
+  viewBox="0 0 120 100"
+  width={size}
+  role={label ? "img" : undefined}
+  aria-label={label}
+  aria-hidden={label ? undefined : "true"}
+>
+  <ellipse cx="60" cy="90" rx="44" ry="5" class="ground" />
+  <g class="body">
+    <rect x="26" y="24" width="68" height="56" rx="16" class="shell" />
+    <rect x="36" y="34" width="48" height="28" rx="8" class="screen" />
+    <circle cx="52" cy="45" r="2.4" fill="#fff" />
+    <circle cx="68" cy="45" r="2.4" fill="#fff" />
+    <path d="M52 52 Q60 58 68 52" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" />
+    <circle cx="84" cy="71" r="2.6" class="light" />
+  </g>
+</svg>
+
+<style>
+  .monitor { display: block; height: auto; }
+  .ground { fill: var(--oa-ground); }
+  .shell { fill: var(--oa-sand); stroke: var(--oa-wood); stroke-width: 2.5; stroke-linejoin: round; }
+  .screen { fill: var(--oa-sage); }
+  .light { fill: var(--oa-highlight); animation: pg-glow 4.5s ease-in-out infinite; }
+  .body { animation: pg-float var(--oa-duration-float) ease-in-out infinite; }
+  @keyframes pg-float { 50% { transform: translateY(-4px); } }
+  @keyframes pg-glow { 0%, 100% { opacity: 0.35; } 50% { opacity: 1; } }
+  @media (prefers-reduced-motion: reduce) { .body, .light { animation: none; } }
+</style>

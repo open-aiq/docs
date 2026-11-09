@@ -1,0 +1,39 @@
+---
+// Status, sharing and placement, under the AQI tile inside a monitor.
+// Matches the dashboard's DeviceFacts.jsx.
+import Icon from './Icon.astro';
+
+interface Props { online?: boolean; seen?: string; isPublic?: boolean; outdoor?: boolean }
+const { online = true, seen = 'Last seen Nov 9, 1:02 PM', isPublic = false, outdoor = false } = Astro.props;
+type Row = { icon: 'online' | 'offline' | 'public' | 'private' | 'outdoor' | 'indoor'; label: string; description: string; tone?: boolean };
+const rows: Row[] = [
+  { icon: online ? 'online' : 'offline', label: online ? 'Online' : 'Offline', description: seen, tone: online },
+  isPublic
+    ? { icon: 'public', label: 'Public', description: 'Readings are shared publicly' }
+    : { icon: 'private', label: 'Private', description: 'Readings are visible only to you' },
+  outdoor
+    ? { icon: 'outdoor', label: 'Outdoor', description: 'Sensor is installed outdoors' }
+    : { icon: 'indoor', label: 'Indoor', description: 'Sensor is installed indoors' },
+];
+---
+<ul class="facts not-content">
+  {rows.map((row) => (
+    <li>
+      <span class="bubble"><Icon name={row.icon} size={18} /></span>
+      <span>
+        <strong class:list={{ online: row.tone }}>{row.label}</strong>
+        <small>{row.description}</small>
+      </span>
+    </li>
+  ))}
+</ul>
+
+<style>
+  .facts { list-style: none; margin: 0; padding: 0 1rem; background: var(--oa-raised); border: 1px solid var(--oa-outline-variant); border-radius: var(--oa-radius-xl); color: var(--oa-on-surface); }
+  li { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 0; margin: 0; }
+  li + li { border-top: 1px solid var(--oa-outline-variant); }
+  .bubble { display: inline-grid; place-items: center; width: 2.25rem; height: 2.25rem; flex: none; border-radius: 999px; background: var(--oa-secondary-container); color: var(--oa-on-secondary-container); }
+  strong { display: block; font-weight: 500; }
+  strong.online { color: var(--oa-online); }
+  small { display: block; font-size: 0.75rem; color: var(--oa-on-surface-variant); }
+</style>

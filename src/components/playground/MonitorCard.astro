@@ -1,0 +1,102 @@
+---
+// The home-screen monitor card, matching the app's MonitorCard
+// (app/lib/widgets/monitor_card.dart): icon, name and status on top, then the
+// AQI block with temperature and PM2.5 beside it.
+import AqiBlock from './AqiBlock.astro';
+import Icon from './Icon.astro';
+
+interface Props {
+  name?: string;
+  outdoor?: boolean;
+  state?: 'ready' | 'loading' | 'no-data' | 'skeleton';
+  online?: boolean;
+  seen?: string;
+  aqi?: number;
+  temperature?: number;
+  pm25?: number;
+  update?: boolean;
+}
+const {
+  name = 'Back garden',
+  outdoor = true,
+  state = 'ready',
+  online = true,
+  seen = '2m ago',
+  aqi,
+  temperature,
+  pm25,
+  update = false,
+} = Astro.props;
+const loading = state === 'loading' || state === 'skeleton';
+const hasData = state === 'ready';
+const stats = [
+  { icon: 'temperature', label: 'Temperature', value: hasData ? temperature?.toFixed(1) : '--', unit: '°C' },
+  { icon: 'pm25', label: 'PM2.5', value: hasData ? pm25?.toFixed(1) : '--', unit: 'µg/m³' },
+] as const;
+---
+<article class="card not-content" aria-label={state === 'skeleton' ? 'Loading monitor' : name}>
+  <header>
+    {state === 'skeleton' ? <span class="sk sk-icon"></span> : (
+      <span class="kind"><Icon name={outdoor ? 'outdoor' : 'indoor'} size={22} /></span>
+    )}
+    {state === 'skeleton' ? <span class="sk sk-name"></span> : <h4>{name}</h4>}
+    {loading ? <span class="sk sk-status"></span> : (
+      <span class:list={['status', { offline: !online }]}>
+        <Icon name={online ? 'online' : 'offline'} size={16} />
+        {state === 'no-data' ? '--m ago' : seen}
+      </span>
+    )}
+    {update && !loading && <span class="badge" title="Update available"><Icon name="update" size={14} /></span>}
+  </header>
+  <div class="reading">
+    <AqiBlock aqi={hasData ? aqi : null} loading={loading} />
+    <ul>
+      {stats.map((stat) => (
+        <li>
+          {loading ? <span class="sk sk-dot"></span> : <span class="stat-icon"><Icon name={stat.icon} size={28} /></span>}
+          {loading ? <span class="sk-lines"><span class="sk sk-value"></span><span class="sk sk-label"></span></span> : (
+            <span>
+              <strong>{stat.value}</strong> <small>{stat.unit}</small>
+              <span class="label">{stat.label}</span>
+            </span>
+          )}
+        </li>
+      ))}
+    </ul>
+  </div>
+</article>
+
+<style>
+  .card {
+    background: var(--oa-raised);
+    border: 1px solid var(--oa-outline-variant);
+    border-radius: var(--oa-radius-card);
+    box-shadow: var(--oa-shadow-rest);
+    padding: 1.25rem;
+    color: var(--oa-on-surface);
+    max-width: 24rem;
+  }
+  header { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 1.1rem; }
+  h4 { flex: 1; margin: 0; font-size: 1rem; font-weight: 600; color: inherit; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .kind, .stat-icon { color: var(--oa-secondary); display: inline-flex; }
+  .status { display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.8rem; color: var(--oa-on-surface-variant); }
+  .status :global(svg) { color: var(--oa-secondary); }
+  .status.offline :global(svg) { color: var(--oa-outline); }
+  .badge { display: inline-grid; place-items: center; width: 1.6rem; height: 1.6rem; border-radius: 999px; background: var(--oa-tertiary-container); color: var(--oa-on-tertiary-container); }
+  .reading { display: grid; grid-template-columns: 5fr 4fr; gap: 1.1rem; align-items: center; }
+  ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 1.3rem; }
+  li { display: flex; align-items: center; gap: 0.6rem; margin: 0; }
+  strong { font-size: 1rem; font-weight: 600; }
+  small { font-size: 0.75rem; color: var(--oa-on-surface-variant); }
+  .label { display: block; font-size: 0.72rem; color: var(--oa-on-surface-variant); }
+  .sk { display: block; background: var(--oa-surface-container-highest); border-radius: var(--oa-radius-sm); animation: pg-pulse var(--oa-duration-pulse) ease-in-out infinite alternate; }
+  .sk-icon { width: 1.4rem; height: 1.4rem; border-radius: 999px; }
+  .sk-name { width: 6rem; height: 1.1rem; flex: none; margin-right: auto; }
+  .sk-status { width: 4rem; height: 0.9rem; }
+  .sk-dot { width: 2.4rem; height: 2.4rem; border-radius: 999px; flex: none; }
+  .sk-lines { display: grid; gap: 0.3rem; }
+  .sk-value { width: 3rem; height: 1rem; }
+  .sk-label { width: 4.2rem; height: 0.7rem; }
+  @keyframes pg-pulse { from { opacity: 1; } to { opacity: 0.35; } }
+  @media (prefers-reduced-motion: reduce) { .sk { animation: none; } }
+</style>

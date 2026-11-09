@@ -1,0 +1,64 @@
+---
+// The readings inside the monitor, grouped like the app's MetricGroups
+// (app/lib/widgets/tiles.dart): particulates, how it feels, then climate.
+import Icon from './Icon.astro';
+
+interface Props {
+  pm25?: number; pm1?: number; pm10?: number;
+  feelsLike?: number; temperature?: number; humidity?: number;
+  loading?: boolean;
+}
+const { pm25, pm1, pm10, feelsLike, temperature, humidity, loading = false } = Astro.props;
+const fmt = (v: number | undefined, digits = 1) => (v == null ? '--' : v.toFixed(digits));
+const groups = [
+  [
+    { icon: 'pm25', label: 'PM2.5', value: fmt(pm25), unit: 'µg/m³' },
+    { icon: 'pm1', label: 'PM1', value: fmt(pm1), unit: 'µg/m³' },
+    { icon: 'pm10', label: 'PM10', value: fmt(pm10), unit: 'µg/m³' },
+  ],
+  [{ icon: 'feelsLike', label: 'Feels like', value: fmt(feelsLike), unit: '°C' }],
+  [
+    { icon: 'temperature', label: 'Temperature', value: fmt(temperature), unit: '°C' },
+    { icon: 'humidity', label: 'Humidity', value: fmt(humidity, 0), unit: '%' },
+  ],
+] as const;
+---
+<div class="groups not-content">
+  {groups.map((group) => loading ? (
+    <div class:list={['group', 'sk', { row: group.length === 1 }]} aria-hidden="true"></div>
+  ) : group.length === 1 ? (
+    <div class="group row">
+      <span class="bubble"><Icon name={group[0].icon} size={18} /></span>
+      <span class="row-label">{group[0].label}</span>
+      <span class="row-value"><strong>{group[0].value}</strong> <small>{group[0].unit}</small></span>
+    </div>
+  ) : (
+    <div class="group cols">
+      {group.map((m) => (
+        <div class="col">
+          <span class="bubble"><Icon name={m.icon} size={18} /></span>
+          <span><strong>{m.value}</strong> <small>{m.unit}</small></span>
+          <span class="label">{m.label}</span>
+        </div>
+      ))}
+    </div>
+  ))}
+</div>
+
+<style>
+  .groups { display: grid; gap: 0.75rem; max-width: 24rem; color: var(--oa-on-surface); }
+  .group { background: var(--oa-raised); border: 1px solid var(--oa-outline-variant); border-radius: var(--oa-radius-xl); padding: 1rem; }
+  .cols { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; }
+  .col { display: grid; justify-items: center; gap: 0.3rem; text-align: center; }
+  .col + .col { border-left: 1px solid var(--oa-outline-variant); }
+  .row { display: flex; align-items: center; gap: 0.8rem; }
+  .row-label { flex: 1; font-size: 1rem; }
+  .row-value strong { font-size: 1.3rem; }
+  .bubble { display: inline-grid; place-items: center; width: 2.25rem; height: 2.25rem; border-radius: 999px; background: var(--oa-secondary-container); color: var(--oa-on-secondary-container); }
+  strong { font-weight: 500; font-size: 1rem; }
+  small, .label { font-size: 0.72rem; color: var(--oa-on-surface-variant); }
+  .sk { border-color: transparent; background: var(--oa-surface-container-highest); min-height: 6.5rem; animation: pg-pulse var(--oa-duration-pulse) ease-in-out infinite alternate; }
+  .sk.row { min-height: 4.5rem; }
+  @keyframes pg-pulse { from { opacity: 1; } to { opacity: 0.35; } }
+  @media (prefers-reduced-motion: reduce) { .sk { animation: none; } }
+</style>

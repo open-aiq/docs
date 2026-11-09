@@ -70,6 +70,7 @@ export default defineConfig({
           label: "Contribute",
           items: [
             { label: "Contributor setup", link: "/contributing/" },
+            { label: "Visual playground", link: "/contributing/visual-playground/" },
             { label: "API conventions", link: "/reference/api/" },
             { label: "API errors", link: "/reference/errors/" },
           ],

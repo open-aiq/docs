@@ -1,0 +1,42 @@
+---
+// The AQI block: the app's AqiBlock (home card) and AqiTile (inside the
+// monitor). The band label always sits next to the color.
+import { band } from './aqi';
+
+interface Props {
+  aqi?: number | null;
+  variant?: 'block' | 'tile';
+  caption?: string;
+  loading?: boolean;
+}
+const { aqi = null, variant = 'block', caption, loading = false } = Astro.props;
+const info = band(aqi);
+const label = variant === 'block' ? info.short : info.label;
+---
+{loading ? (
+  <div class:list={['aqi', variant, 'skeleton']} aria-hidden="true"></div>
+) : (
+  <div class:list={['aqi', variant]} style={`--bg: ${info.bg}; --fg: ${info.fg}`}>
+    <p class="value"><span class="number">{aqi ?? '--'}</span> <span class="unit">AQI</span></p>
+    <p class="label">{label}</p>
+    {caption && <p class="caption">{caption}</p>}
+  </div>
+)}
+
+<style>
+  .aqi { background: var(--bg); color: var(--fg); margin: 0; }
+  .aqi p { margin: 0; line-height: 1.15; }
+  .block { border-radius: var(--oa-radius-xl); padding: 1.1rem 1.1rem; min-height: 8.5rem; display: flex; flex-direction: column; justify-content: center; }
+  .block .number { font-size: 2.6rem; font-weight: 500; letter-spacing: -0.02em; }
+  .block .unit { font-size: 0.9rem; }
+  .block .label { font-size: 1rem; margin-top: 0.25rem; }
+  .tile { border-radius: var(--oa-radius-sheet); padding: 1.6rem 1rem 1.3rem; text-align: center; }
+  .tile .number { display: block; font-size: 4.5rem; font-weight: 500; letter-spacing: -0.03em; }
+  .tile .unit { display: block; font-size: 0.8rem; letter-spacing: 0.08em; opacity: 0.85; }
+  .tile .label { font-size: 1.25rem; margin-top: 0.35rem; }
+  .tile .caption { font-size: 0.8rem; opacity: 0.75; margin-top: 0.4rem; }
+  .skeleton { background: var(--oa-surface-container-highest); animation: pg-pulse var(--oa-duration-pulse) ease-in-out infinite alternate; }
+  .tile.skeleton { min-height: 13rem; }
+  @keyframes pg-pulse { from { opacity: 1; } to { opacity: 0.35; } }
+  @media (prefers-reduced-motion: reduce) { .skeleton { animation: none; } }
+</style>
