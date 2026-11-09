@@ -42,10 +42,18 @@
         ],
         "frontend": [
           { "version": "0.4.0", "info": "Local time" },
-          { "version": "0.4.1", "info": "App-only keys" }
+          { "version": "0.4.1", "info": "App-only keys" },
+          { "version": "0.4.2", "info": "Sand & Sage" }
+        ],
+        "firmware": [
+          { "version": "0.4.0", "info": "Proto2 pins" }
         ],
         "app": [
-          { "version": "0.4.1", "info": "First release" }
+          { "version": "0.4.1", "info": "First release" },
+          { "version": "0.4.2", "info": "Sand & Sage" }
+        ],
+        "hardware": [
+          { "version": "0.4.0", "info": "Proto2 rev B" }
         ]
       }
     },
