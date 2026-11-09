@@ -3,18 +3,13 @@ title: AQI and measurements
 description: What AQI values, colors, and units mean, and how they're averaged.
 ---
 
+import AqiBands from "../../../components/AqiBands.astro";
+
 Open AIQ shows the US EPA Air Quality Index (AQI) as a whole number, with these bands:
 
-| AQI | Category |
-| --- | --- |
-| 0–50 | Good |
-| 51–100 | Moderate |
-| 101–150 | Unhealthy for Sensitive Groups |
-| 151–200 | Unhealthy |
-| 201–300 | Very Unhealthy |
-| 301+ | Hazardous |
+<AqiBands />
 
-Every color comes with its category label.
+Every color comes with its category label. We call 101–150 **Slightly Unhealthy** so it fits on a card; the EPA's own name for it is "Unhealthy for Sensitive Groups".
 
 ## Units
 
