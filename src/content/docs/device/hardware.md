@@ -13,12 +13,16 @@ You'll need:
 
 | Device | Signal | ESP32-S3 GPIO |
 | --- | --- | --- |
-| OLED + SHT30 | SDA | 8 |
-| OLED + SHT30 | SCL | 9 |
-| PMS5003 | sensor TX → ESP RX | 18 |
-| PMS5003 | sensor RX ← ESP TX | 17 |
-| Right button | active-low | 4 |
-| Left button | active-low | 5 |
+| OLED + SHT30 | SDA | 5 |
+| OLED + SHT30 | SCL | 4 |
+| PMS5003 | sensor TX → ESP RX | 17 |
+| PMS5003 | sensor RX ← ESP TX | 18 |
+| Right button | active-low | 15 |
+| Left button | active-low | 6 |
+
+This is the map for the Proto2 carrier board. If you wired a breadboard before
+it, yours probably uses SDA 8, SCL 9, sensor TX 18, sensor RX 17 and buttons 4
+(right) and 5 (left). Rewire it, or keep using firmware from before the change.
 
 - **I²C:** the OLED and SHT30 share one 400 kHz bus at 3.3 V. It needs pull-up
   resistors.
