@@ -9,25 +9,32 @@
       "name": "Web dashboard",
       "repo": "open-aiq/frontend",
       "links": [
-        { "label": "Open the dashboard", "url": "https://open-airiq.web.app" }
+        { "label": "Open the dashboard", "url": "https://open-airiq.web.app" },
+        { "label": "Try the prototype", "url": "https://open-airiq.web.app/prototype/#web" }
       ]
     },
     "app": {
       "name": "Mobile app",
       "repo": "open-aiq/app",
-      "links": []
+      "links": [
+        { "label": "Try the prototype", "url": "https://open-airiq.web.app/prototype/#mobile" }
+      ]
     },
     "firmware": {
       "name": "Device firmware",
       "repo": "open-aiq/device"
+    },
+    "hardware": {
+      "name": "Hardware",
+      "repo": "open-aiq/hardware"
     }
   },
   "lines": [
     {
       "line": "0.4",
       "status": "current",
-      "components": { "backend": "0.4", "frontend": "0.4", "app": "0.4", "firmware": "0.3" },
-      "notes": "Device logs, owner-approved OTA firmware updates, mobile app sign-in, Rust ESP-IDF firmware with secure BLE pairing, local-time history charts.",
+      "components": { "backend": "0.4", "frontend": "0.4", "app": "0.4", "firmware": "0.4", "hardware": "0.4" },
+      "notes": "Device logs, owner-approved OTA firmware updates, mobile app sign-in, secure BLE pairing, local-time history charts, the Sand & Sage look with a hosted prototype, and the Proto2 rev B board.",
       "releases": {
         "backend": [
           { "version": "0.4.0", "info": "Logs, OTA" },
@@ -37,9 +44,6 @@
           { "version": "0.4.0", "info": "Local time" },
           { "version": "0.4.1", "info": "App-only keys" }
         ],
-        "firmware": [
-          { "version": "0.3.0", "info": "Rust, OTA" }
-        ],
         "app": [
           { "version": "0.4.1", "info": "First release" }
         ]
@@ -48,8 +52,11 @@
     {
       "line": "0.3",
       "status": "superseded",
-      "components": { "backend": "0.3", "frontend": "0.3" },
+      "components": { "backend": "0.3", "frontend": "0.3", "firmware": "0.3" },
       "releases": {
+        "firmware": [
+          { "version": "0.3.0", "info": "Rust, OTA" }
+        ],
         "backend": [
           { "version": "0.3.1", "info": "Cascade delete" },
           { "version": "0.3.0", "info": "Validation" }

@@ -37,10 +37,12 @@ const COLUMNS = [
   { key: 'frontend', label: 'Dashboard' },
   { key: 'firmware', label: 'Device' },
   { key: 'app', label: 'App' },
+  { key: 'hardware', label: 'Board' },
 ]
 
 const components = registry.components as Record<string, Component>
-const lines = registry.lines as Line[]
+// Lines list different components, so the JSON's inferred type never matches Line exactly.
+const lines = registry.lines as unknown as Line[]
 
 const headers: Record<string, string> = {
   Accept: 'application/vnd.github+json',
