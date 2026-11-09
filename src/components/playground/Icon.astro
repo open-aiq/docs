@@ -1,0 +1,19 @@
+---
+// The app's Material icons (src/data/icons.json), the same glyphs the web
+// dashboard uses. Decorative: the text beside each one carries the meaning.
+import data from '../../data/icons.json';
+
+type Name = keyof typeof data.icons;
+interface Props {
+  name: Name;
+  size?: number;
+}
+const { name, size = 20 } = Astro.props;
+---
+<svg class="icon" viewBox={data.viewBox} width={size} height={size} fill="currentColor" aria-hidden="true">
+  <path d={data.icons[name].path} />
+</svg>
+
+<style>
+  .icon { flex: none; }
+</style>

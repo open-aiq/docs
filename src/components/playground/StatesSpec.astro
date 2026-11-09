@@ -1,0 +1,52 @@
+---
+// Empty, loading, error and "showing older data" states, matching the app's
+// widgets/states.dart and the dashboard's components/states.jsx.
+import Icon from './Icon.astro';
+import MonitorIllustration from './MonitorIllustration.astro';
+---
+<div class="states not-content">
+  <section class="panel">
+    <MonitorIllustration size={110} />
+    <p class="title">No readings yet</p>
+    <p class="body">Once your monitor is online and sending data, its readings show up here.</p>
+    <p class="kind">Empty</p>
+  </section>
+  <section class="panel" aria-busy="true">
+    <span class="sk" style="width: 7rem; height: 3rem"></span>
+    <span class="sk" style="width: 10rem; height: 0.9rem"></span>
+    <span class="sk" style="width: 100%; height: 0.9rem"></span>
+    <p class="kind">Loading</p>
+  </section>
+  <section class="panel" role="presentation">
+    <span class="error-icon"><Icon name="cloudOff" size={24} /></span>
+    <p class="title">We couldn’t load your monitors</p>
+    <p class="body">It’s usually a brief hiccup. Give it another try in a moment.</p>
+    <span class="button">Try again</span>
+    <p class="kind">Error</p>
+  </section>
+  <section class="panel">
+    <p class="quiet"><Icon name="cloudOff" size={16} /> Couldn’t refresh. Showing data from 10:42.</p>
+    <p class="kind">Quiet note (stale data)</p>
+  </section>
+</div>
+
+<style>
+  .states { display: grid; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); gap: 1rem; }
+  .panel {
+    background: var(--oa-raised); border: 1px solid var(--oa-outline-variant);
+    border-radius: var(--oa-radius-card); box-shadow: var(--oa-shadow-rest);
+    padding: 1.25rem; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 0.6rem; text-align: center; color: var(--oa-on-surface);
+  }
+  .panel[aria-busy] { align-items: flex-start; }
+  p { margin: 0; }
+  .title { font-weight: 600; }
+  .body { font-size: 0.85rem; color: var(--oa-on-surface-variant); max-width: 18rem; }
+  .kind { margin-top: auto; padding-top: 0.6rem; font-size: 0.7rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--oa-primary); align-self: center; }
+  .sk { display: block; background: var(--oa-surface-container-highest); border-radius: var(--oa-radius-sm); animation: pg-pulse var(--oa-duration-pulse) ease-in-out infinite alternate; }
+  .error-icon { display: grid; place-items: center; width: 3rem; height: 3rem; border-radius: 999px; background: var(--oa-primary-container); color: var(--oa-primary); }
+  .button { border: 1px solid var(--oa-outline-variant); border-radius: var(--oa-radius-md); padding: 0.35rem 0.9rem; font-size: 0.85rem; font-weight: 500; }
+  .quiet { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; color: var(--oa-on-surface-variant); }
+  @keyframes pg-pulse { from { opacity: 1; } to { opacity: 0.35; } }
+  @media (prefers-reduced-motion: reduce) { .sk { animation: none; } }
+</style>

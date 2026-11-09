@@ -1,0 +1,27 @@
+---
+// The AQI bands table, straight from the shared design tokens, so the docs,
+// the app and the dashboard always show the same names and colors.
+import tokens from '../data/tokens.json';
+
+const bands = tokens.aqi.bands.map((band, index, all) => {
+  const min = index === 0 ? 0 : (all[index - 1].max ?? 0) + 1;
+  return { ...band, range: band.max == null ? `${min}+` : `${min}–${band.max}` };
+});
+---
+<table>
+  <thead>
+    <tr><th>AQI</th><th>Category</th></tr>
+  </thead>
+  <tbody>
+    {bands.map((band) => (
+      <tr>
+        <td>{band.range}</td>
+        <td><span class="band" style={`background: ${band.bg}; color: ${band.fg}`}>{band.label}</span></td>
+      </tr>
+    ))}
+  </tbody>
+</table>
+
+<style>
+  .band { display: inline-block; padding: 0.1rem 0.6rem; border-radius: var(--oa-radius-md); font-weight: 500; }
+</style>

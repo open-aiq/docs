@@ -1,0 +1,26 @@
+---
+// Every shared icon with its name in each platform: Flutter's Icons.* in the
+// app, the generated React component on the web, and the name used here.
+import data from '../../data/icons.json';
+import Icon from './Icon.astro';
+
+const component = (name: string) => `${name[0].toUpperCase()}${name.slice(1)}Icon`;
+---
+<div class="icons not-content">
+  {Object.entries(data.icons).map(([name, icon]) => (
+    <div class="icon">
+      <span class="glyph"><Icon name={name as keyof typeof data.icons} size={28} /></span>
+      <strong>{name}</strong>
+      <code>{icon.flutter}</code>
+      <code>{component(name)}</code>
+    </div>
+  ))}
+</div>
+
+<style>
+  .icons { display: grid; grid-template-columns: repeat(auto-fill, minmax(10.5rem, 1fr)); gap: 0.75rem; }
+  .icon { display: grid; justify-items: center; gap: 0.25rem; padding: 0.9rem 0.5rem; text-align: center; background: var(--oa-raised); border: 1px solid var(--oa-outline-variant); border-radius: var(--oa-radius-xl); color: var(--oa-on-surface); }
+  .glyph { display: grid; place-items: center; width: 3rem; height: 3rem; border-radius: 999px; background: var(--oa-secondary-container); color: var(--oa-on-secondary-container); margin-bottom: 0.25rem; }
+  strong { font-size: 0.85rem; }
+  code { font-size: 0.7rem; color: var(--oa-on-surface-variant); background: none; }
+</style>

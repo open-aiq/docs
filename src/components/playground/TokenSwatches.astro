@@ -1,0 +1,73 @@
+---
+// Live swatches from src/data/tokens.json, so the page always shows the
+// values every platform is generated from.
+import tokens from '../../data/tokens.json';
+import { band } from './aqi';
+
+const roles = [
+  'primary', 'primaryContainer', 'secondary', 'secondaryContainer', 'tertiary', 'tertiaryContainer',
+  'surface', 'surfaceContainerLowest', 'surfaceContainer', 'surfaceContainerHighest',
+  'onSurface', 'onSurfaceVariant', 'outline', 'outlineVariant', 'error',
+] as const;
+const brand = ['accent', 'sage', 'ink', 'sand', 'wood', 'highlight'] as const;
+const samples = [32, 78, 128, 172, 240, 340, null];
+---
+<div class="tokens not-content">
+  <h4>Color roles</h4>
+  <table>
+    <thead><tr><th>Role</th><th>Light</th><th>Dark</th></tr></thead>
+    <tbody>
+      {roles.map((role) => (
+        <tr>
+          <td><code>{role}</code></td>
+          {(['light', 'dark'] as const).map((mode) => (
+            <td><span class="chip" style={`background: ${tokens.color[mode][role]}`}></span> <code>{tokens.color[mode][role]}</code></td>
+          ))}
+        </tr>
+      ))}
+    </tbody>
+  </table>
+
+  <h4>Brand and illustration</h4>
+  <div class="brand">
+    {brand.map((name) => (
+      <div class="swatch">
+        <span class="split">
+          <span style={`background: ${tokens.brand.light[name]}`}></span>
+          <span style={`background: ${tokens.brand.dark[name]}`}></span>
+        </span>
+        <code>{name}</code>
+      </div>
+    ))}
+  </div>
+
+  <h4>AQI bands</h4>
+  <div class="bands">
+    {samples.map((aqi) => {
+      const info = band(aqi);
+      return <span class="band" style={`background: ${info.bg}; color: ${info.fg}`}><strong>{aqi ?? '--'}</strong> {info.label}</span>;
+    })}
+  </div>
+
+  <h4>Radius and shadow</h4>
+  <div class="radii">
+    {Object.entries(tokens.radius).map(([name, px]) => (
+      <div class="radius" style={`border-radius: ${px}px`}><code>{name}</code><small>{px}px</small></div>
+    ))}
+  </div>
+</div>
+
+<style>
+  .tokens { display: grid; gap: 0.75rem; color: var(--oa-on-surface); }
+  h4 { margin: 1rem 0 0; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--oa-primary); }
+  table { border-collapse: collapse; width: 100%; font-size: 0.8rem; }
+  th, td { text-align: left; padding: 0.3rem 0.5rem; border-bottom: 1px solid var(--oa-outline-variant); }
+  .chip { display: inline-block; width: 1rem; height: 1rem; border-radius: 0.35rem; vertical-align: middle; box-shadow: inset 0 0 0 1px rgb(0 0 0 / 12%); }
+  .brand, .bands, .radii { display: flex; flex-wrap: wrap; gap: 0.75rem; }
+  .swatch { display: grid; justify-items: center; gap: 0.3rem; font-size: 0.75rem; }
+  .split { display: flex; width: 4rem; height: 2.5rem; border-radius: var(--oa-radius-md); overflow: hidden; box-shadow: inset 0 0 0 1px rgb(0 0 0 / 12%); }
+  .split span { flex: 1; }
+  .band { padding: 0.45rem 0.8rem; border-radius: var(--oa-radius-md); font-size: 0.8rem; }
+  .radius { display: grid; place-items: center; width: 5rem; height: 4rem; background: var(--oa-raised); border: 1px solid var(--oa-outline-variant); box-shadow: var(--oa-shadow-rest); font-size: 0.75rem; }
+  small { color: var(--oa-on-surface-variant); }
+</style>

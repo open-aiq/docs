@@ -15,13 +15,15 @@ Clone what you need from [Open AIQ on GitHub](https://github.com/open-aiq).
 
 1. **Backend:** copy `.env.example` to `.env` and fill it in, then run
    `make init`, `make db:up` and `make dev`.
-2. **Dashboard:** copy `.env.example`, point `VITE_API_URL` at the backend's
-   `/api/v1` URL, then run `make init` and `make dev`.
+2. **Dashboard:** run `make init`, then `make review` to see every page with
+   mock data. There's no live dev server: the dashboard is tested on its
+   deployed domain, so set `VITE_API_URL` and the Clerk key in
+   `.env.production` before you `make deploy`.
 3. **Mobile app:** with a phone connected, run `make init` and `make dev`
    (uses your local backend).
 
-All three need the same Clerk instance. Add the dashboard's origin (scheme,
-host and port) to the backend's `CLERK_AUTHORIZED_PARTIES` and
+All three need the same Clerk instance. Add the deployed dashboard's origin
+(scheme and host) to the backend's `CLERK_AUTHORIZED_PARTIES` and
 `CORS_ALLOWED_ORIGINS`. More in [contributor setup](../contributing/).
 
 ## Bring up a monitor

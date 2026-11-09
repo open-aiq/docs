@@ -1,0 +1,111 @@
+---
+title: Visual playground
+description: The shared look of Open AIQ, with the monitor card, the view inside a monitor, and the loading, empty and error states.
+---
+
+import AqiBlock from "../../../components/playground/AqiBlock.astro";
+import DeviceFacts from "../../../components/playground/DeviceFacts.astro";
+import IconSet from "../../../components/playground/IconSet.astro";
+import MetricGroups from "../../../components/playground/MetricGroups.astro";
+import MonitorCard from "../../../components/playground/MonitorCard.astro";
+import StatesSpec from "../../../components/playground/StatesSpec.astro";
+import TokenSwatches from "../../../components/playground/TokenSwatches.astro";
+
+This page is the visual spec for the mobile app and the web dashboard. When you change how a monitor looks in one place, check it here first, then match the other. Switch the site theme to see the dark values.
+
+Want to click around the real thing? The [**prototype**](https://open-airiq.web.app/prototype/) runs both the web dashboard and the mobile app with mock data, no sign-in needed. One switch at the top flips between them.
+
+Flutter and React can't share components, so each platform builds its own. What they do share is the **design tokens**: one file of colors, radii, shadows, motion and AQI bands that generates every platform's theme.
+
+## Design tokens
+
+The source is `src/data/tokens.json` in this repository. Edit it, then run `make tokens:sync` here. That rewrites the generated files in all three repositories:
+
+| Platform | Generated file |
+| --- | --- |
+| Docs | `src/styles/tokens.css` |
+| Web dashboard | `src/styles/tokens.css` and `src/lib/aqi-bands.g.js` |
+| Mobile app | `lib/tokens.g.dart` |
+
+Don't edit the generated files by hand. `make tokens:check` (part of `make verify`) fails if they drift. Color roles use Material 3 names, which the app already uses and which map cleanly to the dashboard's variables.
+
+<TokenSwatches />
+
+## Icons
+
+The app draws these from Flutter's Material icons. `make icons:sync` copies the same glyphs into `src/data/icons.json`, and `make tokens:sync` turns them into React components for the dashboard, so all three show identical icons.
+
+<IconSet />
+
+## Monitor card
+
+The card on the home screen. The AQI block always shows its band name with the color, so meaning never rides on color alone. Loading keeps the same shape, so nothing jumps when the reading arrives.
+
+<div class="pg-grid not-content">
+  <MonitorCard name="Back garden" aqi={32} temperature={22.4} pm25={5.8} />
+  <MonitorCard name="Kitchen" outdoor={false} state="loading" />
+  <MonitorCard name="New sensor" outdoor={false} state="no-data" online={false} update />
+  <MonitorCard name="Ridge lookout" aqi={340} temperature={22.4} pm25={61.8} online={false} seen="3h ago" />
+</div>
+
+**Where it lives:** `MonitorCard` in `app/lib/widgets/monitor_card.dart`, and `MonitorCard` in the dashboard's `src/components/`.
+
+## Inside the monitor
+
+When you open a monitor, the big AQI tile leads, with the monitor's status, sharing and placement beneath it. The readings follow in three groups: particulates, how it feels, and climate.
+
+<div class="pg-grid not-content">
+  <div class="pg-stack">
+    <AqiBlock aqi={78} variant="tile" caption="Averages over the last hour" />
+    <DeviceFacts />
+    <MetricGroups pm25={23.8} pm1={16.2} pm10={33.8} feelsLike={22.7} temperature={22.1} humidity={46} />
+  </div>
+  <div class="pg-stack">
+    <AqiBlock variant="tile" loading />
+    <MetricGroups loading />
+  </div>
+</div>
+
+**Where it lives:** `AqiTile` and `MetricGroups` in `app/lib/widgets/tiles.dart`, and the same names in the dashboard's `src/components/readings.jsx`. The facts beneath the tile are `DeviceFacts.jsx` on the web; the app doesn't show them this way yet.
+
+## States
+
+Every screen that loads data needs these. Keep them calm: say what's happening, why it might be, and what to try.
+
+<StatesSpec />
+
+**Where it lives:** `app/lib/widgets/states.dart` and the dashboard's `src/components/states.jsx`.
+
+## App shell
+
+Every signed-in screen, on the web and in the app, shares one calm top bar. It only says where you are; everything else waits in the avatar menu.
+
+**The bar**, from left to right:
+
+1. A round back button, or the monitor mark on the first screen.
+2. The title, with an optional subtitle such as a device ID.
+3. An optional status chip, such as an update badge.
+4. Your avatar, which opens the menu.
+
+Nothing else goes in the bar. Page actions, like a monitor's settings, belong on the page itself.
+
+**The avatar menu**, top to bottom:
+
+1. Your name and email.
+2. **Theme**: System, Light or Dark as a small row of icons. Picking one keeps the menu open, so you can see the change.
+3. **Settings** in the app, or **Manage account** on the web.
+4. **Docs** and **Public map**. The web also links **View code** and the **Prototype**.
+5. **Sign out**, which asks first.
+
+**Where it lives:** `AiqAppBar` and `AccountMenuButton` in `app/lib/widgets/aiq_app_bar.dart`, and `AppShell.jsx` with `AccountMenu.jsx` in the dashboard's `src/components/`.
+
+## Compare on your machine
+
+- **Mobile app:** `make gallery` in `app/` shows these components with mock data. No sign-in needed.
+- **Web dashboard:** `make review` in `frontend/`, then open the **Playground** link in the review panel.
+- **Both, hosted:** the [prototype](https://open-airiq.web.app/prototype/) is these two builds side by side. `make deploy` in `frontend/` rebuilds it from both repositories, so the mobile app needs to sit next to `frontend/` with Flutter installed.
+
+<style>{`
+  .pg-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr)); gap: 1.25rem; margin-block: 1.5rem; }
+  .pg-stack { display: grid; gap: 0.75rem; align-content: start; }
+`}</style>
