@@ -9,7 +9,9 @@ You'll need:
 - a Plantower **PMS5003** particulate sensor
 - a Sensirion **SHT30** temperature and humidity sensor
 - a 128×64 I²C **OLED**, with either an SH1106 (default) or SSD1306 controller
-- two push buttons
+- two push buttons, for moving between screens and starting pairing
+- optional: an RGB status LED (WS2812). The ESP32-S3-DevKitC-1 v1.0 has one
+  on board
 
 | Device | Signal | ESP32-S3 GPIO |
 | --- | --- | --- |
@@ -17,8 +19,16 @@ You'll need:
 | OLED + SHT30 | SCL | 4 |
 | PMS5003 | sensor TX → ESP RX | 17 |
 | PMS5003 | sensor RX ← ESP TX | 18 |
+| PMS5003 | SET: high runs, low sleeps | 8 |
+| PMS5003 | RESET (optional; not driven yet) | 16 |
 | Right button | active-low | 15 |
 | Left button | active-low | 6 |
+| Pair button | active-low (Proto2 only; not read yet) | 7 |
+| Status LED | WS2812 data | 48 |
+
+Don't skip SET. The firmware uses it to
+[rest the particle sensor](../particle-sensor/) between samples. Left
+unconnected, the sensor runs all the time and wears out sooner.
 
 This is the map for the Proto2 carrier board. If you wired a breadboard before
 it, yours probably uses SDA 8, SCL 9, sensor TX 18, sensor RX 17 and buttons 4
