@@ -3,10 +3,15 @@ title: Telemetry and display
 description: Sampling, uploads and the OLED screens.
 ---
 
-The monitor samples both sensors every **20 seconds** and shows the result
-right away. Every **10 minutes** it averages the window (about 30 samples),
-recomputes AQI from those averages, and uploads one reading. The first upload
-follows the first complete sample after boot.
+The monitor reads temperature and humidity every **20 seconds**. The particle
+sensor works in short bursts instead: every 5 minutes it wakes, settles for
+30 s, and we average every reading from the next 30 s. Then it rests, which
+helps it last longer. [The particle sensor](../particle-sensor/) explains why.
+
+Every **10 minutes** the monitor averages the window (two bursts, about 26
+particle readings), recomputes AQI from those averages, and uploads one
+reading. Uploads go out while the sensor rests, and the first one follows the
+first burst, about a minute after boot.
 
 ```json
 {
@@ -30,7 +35,8 @@ follows the first complete sample after boot.
 ## Live readings
 
 Over Bluetooth, `LIVE:ON` streams every 20-second sample, using the same field
-names and `null` for a missing sensor. See
+names and `null` for a missing sensor. Particle values come from the latest
+burst, so they stay the same while the sensor rests. See
 [BLE provisioning](../ble/#command-reference).
 
 ## Display
@@ -47,7 +53,8 @@ You may also see:
 
 - `PAIRING` with the passkey, during Bluetooth pairing
 - `Updating NN%`, during a firmware update
-- `warming up...` on the AQI screen, before the first sample
+- `warming up...` on the AQI screen, before the first burst. If it comes back
+  later, the particle sensor sent nothing in its last burst; check its cable.
 - `Hold both btns: pair`, on a monitor that isn't set up yet
 
 The AQI category uses the [US EPA bands](../../concepts/aqi/).
