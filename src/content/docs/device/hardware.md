@@ -43,7 +43,7 @@ on wiring? Ask us in a
 
 | Action | Effect |
 | --- | --- |
-| Left / Right | Cycle screens:<br />AQI<br />Climate<br />Status |
+| Left / Right | Cycle screens:<br />AQI<br />Readings<br />Network |
 | Hold both for 3 s | Start Bluetooth pairing mode for 5 minutes |
 
 ## Flash layout
