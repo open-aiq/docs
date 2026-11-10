@@ -4,7 +4,7 @@
 //   node scripts/build-tokens.mjs           write every output
 //   node scripts/build-tokens.mjs --check   exit 1 if any output is stale
 //
-// Outputs in sibling repositories (../frontend, ../app) are written only when
+// Outputs in sibling repositories (../frontend, ../app, ../device) are written only when
 // that repository is checked out next to docs, so docs CI works on its own.
 import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
@@ -283,6 +283,40 @@ function formatDart(source) {
   }
 }
 
+// --- Device firmware (Rust) --------------------------------------------------
+
+// Band names for the OLED and colours for the status LED. Laid out the way
+// rustfmt would, so the firmware's format check passes.
+function deviceRust() {
+  const rustString = (value) => JSON.stringify(value);
+  const rgb = (hex) =>
+    [1, 3, 5].map((i) => `0x${hex.slice(i, i + 2).toLowerCase()}`).join(", ");
+  const lines = [
+    `// ${HEADER}`,
+    "",
+    "/// One US EPA AQI band. `max` is `None` for the open-ended top band.",
+    "#[derive(Clone, Copy, Debug, Eq, PartialEq)]",
+    "pub struct Band {",
+    "    pub max: Option<u16>,",
+    "    pub label: &'static str,",
+    "    pub rgb: (u8, u8, u8),",
+    "}",
+    "",
+    `pub const BANDS: [Band; ${tokens.aqi.bands.length}] = [`,
+  ];
+  for (const band of tokens.aqi.bands) {
+    lines.push(
+      "    Band {",
+      `        max: ${band.max == null ? "None" : `Some(${band.max})`},`,
+      `        label: ${rustString(band.label)},`,
+      `        rgb: (${rgb(band.bg)}),`,
+      "    },",
+    );
+  }
+  lines.push("];", "");
+  return lines.join("\n");
+}
+
 // --- Write or check ----------------------------------------------------------
 
 const OUTPUTS = [
@@ -291,6 +325,7 @@ const OUTPUTS = [
   { path: "../frontend/src/lib/aqi-bands.g.js", build: frontendAqiJs, repo: "../frontend" },
   { path: "../frontend/src/components/icons.g.jsx", build: frontendIconsJsx, repo: "../frontend" },
   { path: "../app/lib/tokens.g.dart", build: () => formatDart(appDart()), repo: "../app" },
+  { path: "../device/src/aqi/bands.g.rs", build: deviceRust, repo: "../device" },
 ];
 
 let stale = 0;
