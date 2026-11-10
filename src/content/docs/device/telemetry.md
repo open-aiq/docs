@@ -45,16 +45,23 @@ The buttons cycle three screens:
 
 | Screen | Shows |
 | --- | --- |
-| AQI | AQI value<br />Category<br />PM2.5 in µg/m³ |
-| Climate | Temperature<br />Humidity<br />Feels-like (heat index) |
-| Status | Wi-Fi state and IP<br />Last upload result and age |
+| AQI | AQI as a large number<br />Band name and a six-step gauge<br />Feels-like temperature (heat index)<br />Wi-Fi icon, struck through when offline |
+| Readings | PM1.0, PM2.5 and PM10 in µg/m³<br />Temperature and humidity |
+| Network | Wi-Fi name and signal bars<br />IP address, or `Offline`<br />Last upload, such as `Sent 2m ago`<br />Firmware version |
+
+The screen has one color, so the band shows as a name and a gauge: six boxes,
+Good on the left, with the current band filled. The band's color is on the
+status LED instead. While the particle sensor rests, the LED blinks once every
+5 seconds in that color.
 
 You may also see:
 
+- `Open AIQ` and `starting...`, for the first few seconds after power-on
 - `PAIRING` with the passkey, during Bluetooth pairing
-- `Updating NN%`, during a firmware update
+- A percentage over `Updating, keep power`, during a firmware update
 - `warming up...` on the AQI screen, before the first burst. If it comes back
   later, the particle sensor sent nothing in its last burst; check its cable.
 - `Hold both btns: pair`, on a monitor that isn't set up yet
 
-The AQI category uses the [US EPA bands](../../concepts/aqi/).
+The band names and colors are the [US EPA bands](../../concepts/aqi/) you see
+in the app and dashboard.
