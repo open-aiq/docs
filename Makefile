@@ -49,7 +49,7 @@ api\:check:
 	$(NPM) run check:api
 
 ##.
-## tokens:sync: Generate the docs, frontend and app theme files from src/data/tokens.json
+## tokens:sync: Generate the docs, frontend and app theme files and the firmware's AQI bands from src/data/tokens.json
 tokens\:sync:
 	$(NPM) run sync:tokens
 
