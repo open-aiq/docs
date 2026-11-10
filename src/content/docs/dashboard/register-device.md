@@ -22,7 +22,7 @@ monitors once they're set up, but it can't add them or change their keys.
 The key never leaves the app and the monitor. The firmware stores it in ESP32
 flash and sends it as the `X-Device-Key` header on uploads.
 
-Lost or exposed a key? Rotate it. In the app, **Settings → Rotate device key**
+Lost or exposed a key? Rotate it. In the app, **Settings → Replace device key**
 rotates and re-provisions in one step while connected. The old key stops
 working immediately, so the monitor gets `401 Unauthorized` until it has the
 new one.
