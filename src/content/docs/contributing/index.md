@@ -67,10 +67,26 @@ make verify     # format, host tests, Clippy, both OLED builds
 Flashing (`make flash`) needs hardware attached. Never commit or share a binary
 built with `MOCK_*` values. See [Firmware setup](../device/firmware/).
 
+## Hardware
+
+The boards live in [open-aiq/hardware](https://github.com/open-aiq/hardware)
+as KiCad 10 projects. Open `pcb/<board>/<board>.kicad_pro`; the libraries and
+design rules come with the project, so there's nothing to set up.
+
+```bash
+scripts/export.sh pcb/proto2   # ERC, DRC, then PDFs, Gerbers, drill files and BOM
+```
+
+Commit your KiCad edits and the regenerated outputs together, so the fab files
+always match the design. If you move a pin, change `src/board.rs` in the
+device repository too; it's the source of truth for the pin map.
+
 ## Releases
 
-Each repository releases with `make release` from a clean `main`. Register a
-new major or minor version in the [version registry](../releases/) first.
+The backend, dashboard, app and firmware release with `make release` from a
+clean `main`. Hardware releases are tagged by hand, with the Gerbers, BOM and
+PDFs attached. The docs site has no releases; it deploys from `main`. Register
+a new major or minor version in the [version registry](../releases/) first.
 Tagging and publishing are for maintainers.
 
 ## Documentation
