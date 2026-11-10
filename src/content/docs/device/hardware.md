@@ -35,9 +35,10 @@ At boot, the firmware looks for the SHT30 at `0x44` or `0x45` and the OLED at
 The OLED controller can't be detected, so choose it at build time
 (`OLED_CONTROLLER=sh1106` or `ssd1306`) or grab the matching release image.
 
-`src/board.rs` in the device repository is the source of truth for pins. Stuck
-on wiring? Ask us in a
-[GitHub issue](https://github.com/open-aiq).
+`src/board.rs` in the device repository is the source of truth for pins. The
+board itself, with schematic, Gerbers and BOM, is in
+[open-aiq/hardware](https://github.com/open-aiq/hardware). Stuck on wiring?
+Ask us in a [GitHub issue](https://github.com/open-aiq/device/issues).
 
 ## Buttons
 
