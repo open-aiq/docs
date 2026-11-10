@@ -10,6 +10,12 @@ export default defineConfig({
       description:
         "Build, provision, and operate an open air-quality monitoring system.",
       favicon: "/favicon.svg",
+      // Drawn by `make brand:sync` from src/data/tokens.json.
+      logo: {
+        light: "./src/assets/brand/logo-light.svg",
+        dark: "./src/assets/brand/logo-dark.svg",
+        alt: "",
+      },
       customCss: ["./src/styles/custom.css"],
       editLink: { baseUrl: "https://github.com/open-aiq/docs/edit/main/" },
       social: [

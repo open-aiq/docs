@@ -3,7 +3,7 @@ NPM ?= npm
 # Swagger file to copy in with api:sync.
 SWAGGER ?= ../backend/docs/swagger.yaml
 
-.PHONY: help init dev build preview types\:check versions\:check links\:check api\:sync api\:check tokens\:sync tokens\:check icons\:sync verify clean
+.PHONY: help init dev build preview types\:check versions\:check links\:check api\:sync api\:check tokens\:sync tokens\:check icons\:sync brand\:sync verify clean
 
 ## help: Show available commands
 help:
@@ -61,6 +61,10 @@ tokens\:check:
 icons\:sync:
 	python3 scripts/extract-icons.py
 	$(NPM) run sync:tokens
+
+## brand:sync: Draw the logo (favicons, Starlight logo, app launcher icons, org avatar) from src/data/tokens.json
+brand\:sync:
+	$(NPM) run sync:brand
 
 ##.
 ## verify: Run versions:check, tokens:check, types:check, build and links:check

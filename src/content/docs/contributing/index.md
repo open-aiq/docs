@@ -83,9 +83,10 @@ make dev
 make api:sync     # after regenerating Swagger in the backend
 make tokens:sync  # after changing src/data/tokens.json
 make icons:sync   # after changing which Material icons we share
+make brand:sync   # after changing the logo or the brand colors
 make verify
 ```
 
 CI checks the API snapshot matches `open-aiq/backend` main. Don't hand-edit the generated endpoint pages or the snapshot.
 
-`src/data/tokens.json` holds the design tokens for every platform: colors, radii, shadows, motion and AQI bands. `make tokens:sync` regenerates the theme files in docs, `../frontend` and `../app`, and `make verify` fails if they drift. The [visual playground](./visual-playground/) shows the tokens and the shared components.
+`src/data/tokens.json` holds the design tokens for every platform: colors, radii, shadows, motion and AQI bands. `make tokens:sync` regenerates the theme files in docs, `../frontend` and `../app`, and `make verify` fails if they drift. The [visual playground](./visual-playground/) shows the tokens and the shared components. The logo is lucide's wind glyph on a sand tile. `make brand:sync` draws it from the same brand colors into the favicons, the docs header, the app's launcher icons and `public/brand/open-aiq-512.png`, the GitHub organization avatar.

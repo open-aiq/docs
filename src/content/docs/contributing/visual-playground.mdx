@@ -4,16 +4,16 @@ description: The shared look of Open AIQ, with the monitor card, the view inside
 ---
 
 import AqiBlock from "../../../components/playground/AqiBlock.astro";
-import DeviceFacts from "../../../components/playground/DeviceFacts.astro";
 import IconSet from "../../../components/playground/IconSet.astro";
 import MetricGroups from "../../../components/playground/MetricGroups.astro";
 import MonitorCard from "../../../components/playground/MonitorCard.astro";
 import StatesSpec from "../../../components/playground/StatesSpec.astro";
 import TokenSwatches from "../../../components/playground/TokenSwatches.astro";
+import WebReadings from "../../../components/playground/WebReadings.astro";
 
 This page is the visual spec for the mobile app and the web dashboard. When you change how a monitor looks in one place, check it here first, then match the other. Switch the site theme to see the dark values.
 
-Want to click around the real thing? The [**prototype**](https://open-airiq.web.app/prototype/) runs both the web dashboard and the mobile app with mock data, no sign-in needed. One switch at the top flips between them.
+Want to click around the real thing? The [**prototype**](https://open-airiq.web.app/prototype/) runs both the web dashboard and the mobile app with mock data, no sign-in needed. The switch at the top flips between them, and the **Screen** menu beside it jumps to any page or app screen.
 
 Flutter and React can't share components, so each platform builds its own. What they do share is the **design tokens**: one file of colors, radii, shadows, motion and AQI bands that generates every platform's theme.
 
@@ -37,6 +37,12 @@ The app draws these from Flutter's Material icons. `make icons:sync` copies the 
 
 <IconSet />
 
+## Logo
+
+Our mark is lucide's wind glyph on a rounded sand tile with a wood outline. `make brand:sync` draws it from the brand colors into every favicon, the docs header, the app's launcher icons and the GitHub organization avatar, so don't edit those images by hand. On the web and in the app's top bar, the same glyph sits in the round sage bubble.
+
+**Where it lives:** `scripts/build-brand.mjs` and `src/assets/brand/` here, `Wind` from `lucide-react` in the dashboard's `AppShell.jsx` and `PublicHeader.jsx`, and `WindGlyph` in `app/lib/widgets/wind_glyph.dart`.
+
 ## Monitor card
 
 The card on the home screen. The AQI block always shows its band name with the color, so meaning never rides on color alone. Loading keeps the same shape, so nothing jumps when the reading arrives.
@@ -52,12 +58,19 @@ The card on the home screen. The AQI block always shows its band name with the c
 
 ## Inside the monitor
 
-When you open a monitor, the big AQI tile leads, with the monitor's status, sharing and placement beneath it. The readings follow in three groups: particulates, how it feels, and climate.
+When you open a monitor on the web, the readings sit in two columns of the same height. On the left, the big AQI tile takes three parts and particulates one. On the right, how warm it feels and climate take two parts each. Each reading puts its icon beside the value, and Feels like gets the biggest number because it has a card to itself. Below them, bubbles with one word each say whether the monitor is online, shared and indoors or out. Hover one for the details. On a narrow screen everything stacks in the same order.
 
-<div class="pg-grid not-content">
+<WebReadings aqi={78} pm25={23.8} pm1={16.2} pm10={33.8} feelsLike={22.7} temperature={22.1} humidity={46} />
+
+While it loads, each piece keeps its place as a soft placeholder:
+
+<WebReadings loading />
+
+The app keeps a single column on the phone: the AQI tile, then particulates, how it feels, and climate.
+
+<div class="pg-grid">
   <div class="pg-stack">
     <AqiBlock aqi={78} variant="tile" caption="Averages over the last hour" />
-    <DeviceFacts />
     <MetricGroups pm25={23.8} pm1={16.2} pm10={33.8} feelsLike={22.7} temperature={22.1} humidity={46} />
   </div>
   <div class="pg-stack">
@@ -66,7 +79,7 @@ When you open a monitor, the big AQI tile leads, with the monitor's status, shar
   </div>
 </div>
 
-**Where it lives:** `AqiTile` and `MetricGroups` in `app/lib/widgets/tiles.dart`, and the same names in the dashboard's `src/components/readings.jsx`. The facts beneath the tile are `DeviceFacts.jsx` on the web; the app doesn't show them this way yet.
+**Where it lives:** on the web, `MonitorReadings` lays out `AqiTile`, `ParticulatesGroup`, `FeelsLikeGroup` and `ClimateGroup` from the dashboard's `src/components/readings.jsx`, with the `DeviceFacts.jsx` bubbles underneath. In the app, `AqiTile` and `MetricGroups` live in `app/lib/widgets/tiles.dart`.
 
 ## States
 
@@ -82,8 +95,8 @@ Every signed-in screen, on the web and in the app, shares one calm top bar. It o
 
 **The bar**, from left to right:
 
-1. A round back button, or the monitor mark on the first screen.
-2. The title, with an optional subtitle such as a device ID.
+1. A round back button, or the Open AIQ wind mark on the first screen.
+2. The title, with an optional subtitle such as the monitor's name.
 3. An optional status chip, such as an update badge.
 4. Your avatar, which opens the menu.
 
@@ -93,7 +106,7 @@ Nothing else goes in the bar. Page actions, like a monitor's settings, belong on
 
 1. Your name and email.
 2. **Theme**: System, Light or Dark as a small row of icons. Picking one keeps the menu open, so you can see the change.
-3. **Settings** in the app, or **Manage account** on the web.
+3. **Settings** in the app, or **Manage account** on the web. Both lead to your account page: your username, how you sign in, and deleting your account.
 4. **Docs** and **Public map**. The web also links **View code** and the **Prototype**.
 5. **Sign out**, which asks first.
 
@@ -103,7 +116,7 @@ Nothing else goes in the bar. Page actions, like a monitor's settings, belong on
 
 - **Mobile app:** `make gallery` in `app/` shows these components with mock data. No sign-in needed.
 - **Web dashboard:** `make review` in `frontend/`, then open the **Playground** link in the review panel.
-- **Both, hosted:** the [prototype](https://open-airiq.web.app/prototype/) is these two builds side by side. `make deploy` in `frontend/` rebuilds it from both repositories, so the mobile app needs to sit next to `frontend/` with Flutter installed.
+- **Both, hosted:** the [prototype](https://open-airiq.web.app/prototype/) is these two builds side by side, with a **Screen** menu for every page and app screen. `make deploy` in `frontend/` rebuilds it from both repositories, so the mobile app needs to sit next to `frontend/` with Flutter installed.
 
 <style>{`
   .pg-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr)); gap: 1.25rem; margin-block: 1.5rem; }

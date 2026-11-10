@@ -14,12 +14,13 @@ it on your phone with `make dev:prod`.
   [Register a device](../register-device/).
 - **Online and live views.** Last-hour average and history from the backend,
   plus a live reading every 20 seconds over Bluetooth when you're nearby.
-- **Monitor settings.** Everything the dashboard has, plus Wi-Fi, location,
-  device details and factory reset. The app is also the only place to replace
+- **Monitor settings.** Everything the dashboard has, including the device
+  ID, plus Wi-Fi, location, device details and factory reset. The app is also the only place to replace
   a monitor's key: while connected, it rotates the key and sends the new one
   to the monitor in one step.
-- **Your account.** Tap your avatar for your profile, app settings such as
-  light or dark mode, and **Sign out**.
+- **Your account.** Tap your avatar for app settings such as light or dark
+  mode, **Manage account** (username, sign-in methods, deleting your account)
+  and **Sign out**.
 - **Firmware updates.** Approve an **Update available** badge and watch it
   download and install. See [Firmware updates](../../device/ota/).
 - **Logs.** Warnings, errors and key events from the monitor.
