@@ -16,9 +16,17 @@ Most problems come down to one mismatched setting. Find yours below, and if you'
 
 That's CORS. Set `VITE_API_URL` to the backend URL ending in `/api/v1`, and add the exact browser origin (scheme, host and port) to the backend's `CORS_ALLOWED_ORIGINS`.
 
+## The monitor's light is blinking red
+
+That's a fault code. Count the blinks between pauses, then look the number up
+in [the status LED's fault codes](../../device/status-led/#fault-codes). It
+points you at the part to check.
+
 ## No readings yet or device offline
 
-Check the serial logs, Wi-Fi, `DEVID`/`DEVKEY` and `BACKEND_BASE_URL`. The first upload comes shortly after boot, then every ten minutes. Offline means twenty minutes without data, so one missed upload won't flag it.
+Start with the monitor's light: red blinks are a
+[fault code](../../device/status-led/#fault-codes). Then check the serial
+logs, Wi-Fi, `DEVID`/`DEVKEY` and `BACKEND_BASE_URL`. The first upload comes shortly after boot, then every ten minutes. Offline means twenty minutes without data, so one missed upload won't flag it.
 
 ## Upload returns 401
 
