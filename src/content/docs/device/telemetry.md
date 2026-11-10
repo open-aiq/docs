@@ -50,9 +50,9 @@ The buttons cycle three screens:
 | Network | Wi-Fi name and signal bars<br />IP address, or `Offline`<br />Last upload, such as `Sent 2m ago`<br />Firmware version |
 
 The screen has one color, so the band shows as a name and a gauge: six boxes,
-Good on the left, with the current band filled. The band's color is on the
-status LED instead. While the particle sensor rests, the LED blinks once every
-5 seconds in that color.
+Good on the left, with the current band filled. The band's color is on
+[the status LED](../status-led/) instead. While the particle sensor rests, the
+LED blinks once every 5 seconds in that color.
 
 You may also see:
 
