@@ -56,7 +56,8 @@ status LED instead. While the particle sensor rests, the LED blinks once every
 
 You may also see:
 
-- `Open AIQ` and `starting...`, for the first few seconds after power-on
+- `Open AIQ` and `starting...`, from power-on until Wi-Fi has had its first
+  try. That's usually a few seconds, and longer if the network is out of reach.
 - `PAIRING` with the passkey, during Bluetooth pairing
 - A percentage over `Updating, keep power`, during a firmware update
 - `warming up...` on the AQI screen, before the first burst. If it comes back
