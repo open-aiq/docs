@@ -29,7 +29,7 @@ const cards: Card[] = [
     id: 'device',
     title: 'Air monitor',
     tech: 'ESP32-S3 · Rust',
-    body: 'Reads a PMS5003 particle sensor and an SHT30 climate sensor every 20 seconds, and shows the result on its little screen right away.',
+    body: 'Samples a PMS5003 particle sensor in a short burst every 5 minutes and reads an SHT30 climate sensor every 20 seconds, then shows the result on its little screen.',
     links: [{ href: '/device/hardware/', label: 'Hardware and pin map' }],
   },
   {
