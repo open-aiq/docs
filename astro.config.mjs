@@ -63,6 +63,7 @@ export default defineConfig({
             { label: "Firmware setup", link: "/device/firmware/" },
             { label: "BLE provisioning", link: "/device/ble/" },
             { label: "Telemetry and display", link: "/device/telemetry/" },
+            { label: "The status LED", link: "/device/status-led/" },
             { label: "Firmware updates and logs", link: "/device/ota/" },
           ],
         },
