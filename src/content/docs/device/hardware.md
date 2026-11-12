@@ -10,8 +10,8 @@ You'll need:
 - a Sensirion **SHT30** temperature and humidity sensor
 - a 128×64 I²C **OLED**, with either an SH1106 (default) or SSD1306 controller
 - two push buttons, for moving between screens and starting pairing
-- optional: an RGB status LED (WS2812). The ESP32-S3-DevKitC-1 v1.0 has one
-  on board
+- optional: an RGB status LED (WS2812). Every ESP32-S3-DevKitC-1 has one on
+  board
 
 | Device | Signal | ESP32-S3 GPIO |
 | --- | --- | --- |
@@ -24,7 +24,7 @@ You'll need:
 | Right button | active-low | 15 |
 | Left button | active-low | 6 |
 | Pair button | active-low (Proto2 only; not read yet) | 7 |
-| Status LED | WS2812 data | 48 |
+| Status LED | WS2812 data | 48 (devkit v1.0) or 38 (v1.1) |
 
 Don't skip SET. The firmware uses it to
 [rest the particle sensor](../particle-sensor/) between samples. Left
@@ -36,8 +36,10 @@ it, yours probably uses SDA 8, SCL 9, sensor TX 18, sensor RX 17 and buttons 4
 
 - **I²C:** the OLED and SHT30 share one 400 kHz bus at 3.3 V. It needs pull-up
   resistors.
-- **PMS5003:** usually 5 V power, UART at 9600 baud. Check its UART logic levels
-  before wiring it to the ESP32-S3.
+- **PMS5003:** 5 V power, UART at 9600 baud. Its data pins use 3.3 V logic, so
+  they connect straight to the ESP32-S3.
+- **Status LED:** the firmware sends the same signal to GPIO 48 and 38, so the
+  devkit's LED lights on either board revision. Leave both pins free.
 - **Buttons:** wire to ground; the chip's internal pull-ups do the rest.
 
 At boot, the firmware looks for the SHT30 at `0x44` or `0x45` and the OLED at
