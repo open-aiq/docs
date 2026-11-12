@@ -11,9 +11,10 @@ We keep it dim on purpose, at about 10% brightness, so it's fine next to a
 bed.
 
 :::note
-The light is on GPIO 48: the onboard LED of the ESP32-S3-DevKitC-1 v1.0, and
-D1 on our SMT board. DevKitC-1 v1.1 moved its LED to GPIO 38, so it stays dark
-there. The monitor works the same without it.
+The light is the onboard LED of the ESP32-S3-DevKitC-1, or D1 on our SMT
+board. DevKitC-1 v1.0 and the SMT board use GPIO 48; v1.1 moved it to GPIO 38.
+The firmware sends the same signal to both, so it lights on either. The monitor
+works the same without it.
 :::
 
 ## What the patterns mean
