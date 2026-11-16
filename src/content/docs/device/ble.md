@@ -51,18 +51,18 @@ Bluetooth prompt. Older iOS and Android use a normal scan.
 INFO                      -> is the monitor registered (DEVID, DEVKEY_SET)?
 DEVID:dev_...             -> only when registering (see Register a device)
 DEVKEY:sk_...
-SCAN                      -> nearby WiFi networks
+SCAN                      -> nearby Wi-Fi networks
 SSID:Your network
 PASS:Your password
 LAT:24.8607
 LON:67.0011
-SAVE                      -> persists and joins WiFi
+SAVE                      -> persists and joins Wi-Fi
 ```
 
 Setters only change memory until `SAVE`. Values may contain colons; secrets
 are never echoed. `SAVE` replies `SAVE_BEGIN`, `WIFI_CONNECTING`, then `SAVE_OK`
 and `IP:<ip>` or `SAVE_FAILED:WIFI` / `SAVE_FAILED:STORAGE`, then `SAVE_END`.
-If WiFi fails, don't worry: credentials are kept, so you only fix the network.
+If Wi-Fi fails, don't worry: credentials are kept, so you only fix the network.
 
 ## Command reference
 
