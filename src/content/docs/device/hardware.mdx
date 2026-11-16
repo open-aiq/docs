@@ -3,35 +3,57 @@ title: Hardware and pin map
 description: Parts, wiring and flash layout.
 ---
 
+import WiringDiagram from "../../../components/WiringDiagram.astro";
+import { gpioLabel, pinTable } from "../../../data/wiring";
+
 You'll need:
 
-- an ESP32-S3 board with at least 4 MB of flash
+- an ESP32-S3 board with at least 4 MB of flash (we use the DevKitC-1)
 - a Plantower **PMS5003** particulate sensor
 - a Sensirion **SHT30** temperature and humidity sensor
 - a 128×64 I²C **OLED**, with either an SH1106 (default) or SSD1306 controller
-- two push buttons
+- two push buttons, a breadboard and some jumper wires
 
-| Device | Signal | ESP32-S3 GPIO |
-| --- | --- | --- |
-| OLED + SHT30 | SDA | 5 |
-| OLED + SHT30 | SCL | 4 |
-| PMS5003 | sensor TX → ESP RX | 17 |
-| PMS5003 | sensor RX ← ESP TX | 18 |
-| Right button | active-low | 15 |
-| Left button | active-low | 6 |
+Here's how it all connects. Pick the breadboard if you're wiring it by hand,
+or Proto2 if you have the carrier board.
+
+<WiringDiagram />
+
+<table>
+  <thead>
+    <tr>
+      <th>Part</th>
+      <th>Signal</th>
+      <th>ESP32-S3 pin</th>
+    </tr>
+  </thead>
+  <tbody>
+    {pinTable.map((row) => (
+      <tr>
+        <td>{row.part}</td>
+        <td>
+          {row.signal}
+          {row.note && <em> ({row.note})</em>}
+        </td>
+        <td>{gpioLabel(row.net)}</td>
+      </tr>
+    ))}
+  </tbody>
+</table>
 
 This is the map for the Proto2 carrier board. If you wired a breadboard before
 it, yours probably uses SDA 8, SCL 9, sensor TX 18, sensor RX 17 and buttons 4
 (right) and 5 (left). Rewire it, or keep using firmware from before the change.
 
-- **I²C:** the OLED and SHT30 share one 400 kHz bus at 3.3 V. It needs pull-up
-  resistors.
-- **PMS5003:** usually 5 V power, UART at 9600 baud. Check its UART logic levels
-  before wiring it to the ESP32-S3.
+- **I²C:** the OLED and SHT30 share one 400 kHz bus at 3.3 V, and it needs
+  pull-up resistors. Most breakouts already have them. If yours don't, add
+  4.7 kΩ from SDA and from SCL to 3.3 V, like Proto2's R1 and R2.
+- **PMS5003:** it needs 5 V power, and its UART runs at 9600 baud with 3.3 V
+  logic. Cable and adapter pin orders vary, so wire by the labels.
 - **Buttons:** wire to ground; the chip's internal pull-ups do the rest.
 
 At boot, the firmware looks for the SHT30 at `0x44` or `0x45` and the OLED at
-`0x3C` or `0x3D`. A missing part is logged and the rest keeps working.
+`0x3C` or `0x3D`. If a part is missing, it's logged and the rest keeps working.
 The OLED controller can't be detected, so choose it at build time
 (`OLED_CONTROLLER=sh1106` or `ssd1306`) or grab the matching release image.
 
@@ -43,7 +65,7 @@ on wiring? Ask us in a
 
 | Action | Effect |
 | --- | --- |
-| Left / Right | Cycle screens:<br />AQI<br />Climate<br />Status |
+| Left / Right | Cycle screens:<br />AQI<br />Readings<br />Network |
 | Hold both for 3 s | Start Bluetooth pairing mode for 5 minutes |
 
 ## Flash layout

@@ -1,0 +1,1060 @@
+---
+// How to wire the monitor, drawn like a tutorial rather than a schematic, in
+// realistic colours so it matches the parts on your desk.
+//
+// Two layouts share one set of cards. The breadboard build spans two boards,
+// because the DevKitC-1's headers are 25.4 mm apart, too wide for one; a
+// switch hides the boards and shows the same parts wired directly. The Proto2
+// view shows the carrier with simplified traces (not the real routing).
+//
+// Every wire, trace and part is a button. Hovering, tapping or focusing one
+// highlights it, with the parts it touches, and shows its card below. Without
+// JavaScript both layouts and every card are listed. Pins come from
+// src/data/wiring.ts, so the drawing and the page's pin table agree.
+import { cards, leftHeader, rightHeader, netPin, type Card, type Layout, type NetId } from '../data/wiring'
+
+type Pt = [number, number]
+type Seg = { d: string; a: Pt; b: Pt }
+type Net = { id: NetId; segs: Seg[]; joins?: Pt[] }
+
+const byId = Object.fromEntries(cards.map((c) => [c.id, c])) as Record<string, Card>
+const f = (n: number) => Math.round(n * 10) / 10
+
+const line = (x1: number, y1: number, x2: number, y2: number): Seg => ({ d: `M${x1},${y1} L${x2},${y2}`, a: [x1, y1], b: [x2, y2] })
+const curve = (d: string, a: Pt, b: Pt): Seg => ({ d, a, b })
+// A tidy route: straight runs with softly rounded corners.
+const ortho = (pts: Pt[], r = 6): Seg => {
+  let d = `M${pts[0][0]},${pts[0][1]}`
+  for (let i = 1; i < pts.length - 1; i++) {
+    const [x0, y0] = pts[i - 1]
+    const [x1, y1] = pts[i]
+    const [x2, y2] = pts[i + 1]
+    const l1 = Math.hypot(x1 - x0, y1 - y0)
+    const l2 = Math.hypot(x2 - x1, y2 - y1)
+    const rr = Math.min(r, l1 / 2, l2 / 2)
+    d += ` L${f(x1 - ((x1 - x0) / l1) * rr)},${f(y1 - ((y1 - y0) / l1) * rr)} Q${x1},${y1} ${f(x1 + ((x2 - x1) / l2) * rr)},${f(y1 + ((y2 - y1) / l2) * rr)}`
+  }
+  const last = pts[pts.length - 1]
+  return { d: `${d} L${last[0]},${last[1]}`, a: pts[0], b: last }
+}
+
+const tone: Record<NetId, string> = {
+  v5: 'v5', v3: 'v3', gnd: 'gnd', sda: 'sda', scl: 'scl', tx: 'tx', rx: 'rx',
+  set: 'ctl', reset: 'ctl', left: 'btn', right: 'btn', pair: 'btn',
+}
+
+// ---------- Breadboard ----------
+// Two boards, top to bottom:
+//   strip:   rails (cut from board 1's bottom edge)
+//   board 1: rails | 5 rows | channel | 5 rows
+//   board 2: rails | 5 rows | channel | 5 rows | rails
+// The devkit lies across the seam, antenna left and USB right. Its signal
+// header sits in board 1's lowest row, which leaves four free holes above
+// every pin; its other header lands ten rows down, in board 2. Board 1's
+// bottom rails would sit under the devkit, so they're cut off and moved to
+// the top, where they carry the I²C bus.
+const P = 16
+const row = (n: number) => 248 + n * P
+const bbCols = Array.from({ length: 40 }, (_, c) => 56 + c * P)
+const holeRows = [3, 4, 5, 6, 7, 10, 11, 12, 13, 14, 20, 21, 22, 23, 24, 27, 28, 29, 30, 31].map(row)
+const railRows = [-3, -2, 0, 1, 17, 18, 33, 34].map(row)
+const hole = (x: number, y: number) => `M${x - 2.4},${y - 2.4}h4.8v4.8h-4.8z`
+const bbHoles = [
+  ...holeRows.flatMap((y) => bbCols.map((x) => hole(x, y))),
+  ...railRows.flatMap((y) => bbCols.filter((_, c) => c % 6 !== 3).map((x) => hole(x, y))),
+].join('')
+
+const X = (name: string) => 216 + leftHeader.indexOf(name) * P
+const xp = (net: NetId) => X(netPin[net])
+const TOP = row(14) // the signal header
+const BOT = row(24) // the other header
+const rail = { scl: row(-3), sda: row(-2), v3: row(0), gnd: row(1) }
+
+// Parts and their pins. The OLED and PMS5003 hang above the boards, lifted
+// clear of the I²C strip (UP); the PMS5003's pins sit over the columns they
+// feed and the OLED's over free rail holes. The SHT30 sits to the left, away
+// from the devkit's warmth; the buttons plug into board 1.
+const UP = 48
+const OLED_DX = -96
+const oled = { y: 212 - UP, gnd: 136, v3: 152, scl: 168, sda: 184 }
+const pms = { y: 212 - UP, reset: 344, rx: 360, tx: 376, set: 392, gnd: 408, v5: 424 }
+const pmsLabels: [number, string][] = [[pms.reset, 'RST'], [pms.rx, 'TX'], [pms.tx, 'RX'], [pms.set, 'SET'], [pms.gnd, 'GND'], [pms.v5, 'VCC']]
+const sht = { x: -12, v3: 384, gnd: 400, scl: 416, sda: 432 }
+// Where each SHT30 wire meets its rail, left to right so the wires nest.
+const shtAt = { v3: 56, gnd: 72, scl: 88, sda: 120 }
+const bbButtons: { id: NetId; sig: number; gnd: number }[] = [
+  { id: 'left', sig: xp('left'), gnd: xp('left') + P },
+  { id: 'right', sig: xp('right'), gnd: xp('right') + P },
+]
+const legY = row(5)
+
+// Out to the right, then up into the rail: lower pins reach further right, so
+// the four wires nest without crossing.
+const shtWire = (net: 'v3' | 'gnd' | 'scl' | 'sda') => {
+  const y = sht[net]
+  const x = shtAt[net]
+  const to: Pt = [x, rail[net]]
+  return curve(`M${sht.x},${y} C${x - 32},${y} ${x},${y - 84} ${x},${to[1]}`, [sht.x, y], to)
+}
+
+// Every I²C part drops into the strip at the top, and the devkit's SDA and
+// SCL each send one wire up to it.
+const bbNets: Net[] = [
+  {
+    id: 'gnd',
+    segs: [
+      line(oled.gnd, oled.y, oled.gnd, rail.gnd),
+      line(pms.gnd, pms.y, pms.gnd, rail.gnd),
+      line(X('GND'), row(10), X('GND'), rail.gnd),
+      ...bbButtons.map((b) => line(b.gnd, row(3), b.gnd, rail.gnd)),
+      shtWire('gnd'),
+    ],
+  },
+  {
+    id: 'v3',
+    segs: [line(oled.v3, oled.y, oled.v3, rail.v3), line(X('3V3'), row(10), X('3V3'), rail.v3), shtWire('v3')],
+  },
+  { id: 'v5', segs: [curve(`M${pms.v5},${pms.y} C${pms.v5},330 ${xp('v5')},330 ${xp('v5')},${row(11)}`, [pms.v5, pms.y], [xp('v5'), row(11)])] },
+  { id: 'set', segs: [line(pms.set, pms.y, xp('set'), row(11))] },
+  { id: 'tx', segs: [line(pms.tx, pms.y, xp('tx'), row(11))] },
+  { id: 'rx', segs: [line(pms.rx, pms.y, xp('rx'), row(11))] },
+  ...bbButtons.map((b): Net => ({ id: b.id, segs: [line(b.sig, row(7), b.sig, row(10))] })),
+  { id: 'scl', segs: [line(oled.scl, oled.y, oled.scl, rail.scl), line(xp('scl'), row(10), xp('scl'), rail.scl), shtWire('scl')] },
+  { id: 'sda', segs: [line(oled.sda, oled.y, oled.sda, rail.sda), line(xp('sda'), row(10), xp('sda'), rail.sda), shtWire('sda')] },
+]
+
+// The same parts with no breadboard: wires run straight to the header pins.
+// Bare wires stand in for the rails: SCL, SDA, 3.3 V and ground.
+// A bare line from the SHT30's end to the devkit pin's column, with parts
+// dropping onto it from [x, y].
+const bus = (net: 'v3' | 'gnd' | 'scl' | 'sda', to: number, drops: Pt[]): Net => ({
+  id: net,
+  segs: [
+    line(shtAt[net], rail[net], to, rail[net]),
+    line(to, rail[net], to, TOP),
+    ...drops.map(([x, y]) => line(x, y, x, rail[net])),
+    shtWire(net),
+  ],
+  joins: drops.map(([x]): Pt => [x, rail[net]]),
+})
+const dNets: Net[] = [
+  bus('gnd', X('GND'), [[oled.gnd, oled.y], [pms.gnd, pms.y], ...bbButtons.map((b): Pt => [b.gnd, legY])]),
+  bus('v3', X('3V3'), [[oled.v3, oled.y]]),
+  { id: 'v5', segs: [ortho([[pms.v5, pms.y], [pms.v5, 300], [xp('v5'), 300], [xp('v5'), TOP]], 10)] },
+  { id: 'set', segs: [line(pms.set, pms.y, xp('set'), TOP)] },
+  { id: 'tx', segs: [line(pms.tx, pms.y, xp('tx'), TOP)] },
+  { id: 'rx', segs: [line(pms.rx, pms.y, xp('rx'), TOP)] },
+  ...bbButtons.map((b): Net => ({ id: b.id, segs: [line(b.sig, legY, b.sig, TOP)] })),
+  bus('scl', xp('scl'), [[oled.scl, oled.y]]),
+  bus('sda', xp('sda'), [[oled.sda, oled.y]]),
+]
+const bbLabels = [...new Set(bbNets.map((n) => netPin[n.id]))]
+
+const fan = { x: 404, y: 100 }
+const blades = [0, 1, 2, 3, 4, 5, 6].map((i) => {
+  const a = (i * 2 * Math.PI) / 7
+  const p = (r: number, da: number) => `${f(fan.x + r * Math.cos(a + da))},${f(fan.y + r * Math.sin(a + da))}`
+  return `M${p(9, 0)} Q${p(24, 0.5)} ${p(36, 1)}`
+})
+
+// ---------- Proto2 ----------
+// Positions follow the rev C board (hardware/pcb/proto2): OLED top-left with
+// the buttons under it, the PMS5003 bed in the middle, SHT30 below it and the
+// devkit on the right with its USB at the bottom.
+const LX = 693
+const py = (name: string) => f(50 + leftHeader.indexOf(name) * 15.7)
+const pn = (net: NetId) => py(netPin[net])
+const j1 = (pin: number) => f(233 - (pin - 1) * 8.2) // J1 pin 1 (VCC) is at the bottom
+const hop = (y1: number, y2: number): Seg => curve(`M658,${y1} C676,${y1} 676,${y2} ${LX},${y2}`, [658, y1], [LX, y2])
+const j2 = { y: 52, gnd: 174, v3: 190, scl: 206, sda: 222 }
+const j3 = { y: 378, v3: 350, gnd: 366, scl: 382, sda: 398 }
+const buttons: { id: NetId; x: number; label: string }[] = [
+  { id: 'left', x: 116, label: 'LEFT' },
+  { id: 'pair', x: 196, label: 'PAIR' },
+  { id: 'right', x: 276, label: 'RIGHT' },
+]
+
+const p2Nets: Net[] = [
+  {
+    id: 'gnd',
+    segs: [
+      ortho([[LX, py('GND')], [682, py('GND')], [682, 400], [92, 400], [92, 62], [j2.gnd, 62], [j2.gnd, j2.y]]),
+      ortho([[658, j1(2)], [645, j1(2)], [645, 400]]),
+      ...buttons.map((b) => line(b.x - 13, 315, b.x - 13, 400)),
+      line(j3.gnd, j3.y, j3.gnd, 400),
+    ],
+  },
+  {
+    id: 'v3',
+    segs: [
+      ortho([[LX, py('3V3')], [680, py('3V3')], [680, 36], [76, 36], [76, 410], [j3.v3, 410], [j3.v3, j3.y]]),
+      line(j2.v3, 36, j2.v3, j2.y),
+    ],
+  },
+  { id: 'v5', segs: [ortho([[658, j1(1)], [676, j1(1)], [676, pn('v5')], [LX, pn('v5')]])] },
+  { id: 'reset', segs: [hop(j1(6), pn('reset'))] },
+  { id: 'rx', segs: [hop(j1(5), pn('rx'))] },
+  { id: 'tx', segs: [hop(j1(4), pn('tx'))] },
+  { id: 'set', segs: [hop(j1(3), pn('set'))] },
+  ...buttons.map((b, i): Net => ({
+    id: b.id,
+    segs: [ortho([[b.x + 13, 289], [b.x + 13, 266 + i * 8], [336 + i * 10, 266 + i * 8], [336 + i * 10, pn(b.id)], [LX, pn(b.id)]])],
+  })),
+  {
+    id: 'sda',
+    segs: [ortho([[j2.sda, j2.y], [j2.sda, pn('sda')], [LX, pn('sda')]]), line(j3.sda, j3.y, j3.sda, pn('sda'))],
+  },
+  {
+    id: 'scl',
+    segs: [ortho([[j2.scl, j2.y], [j2.scl, 44], [250, 44], [250, pn('scl')], [LX, pn('scl')]]), line(j3.scl, j3.y, j3.scl, pn('scl'))],
+  },
+]
+const p2Labels = [...new Set(p2Nets.map((n) => netPin[n.id]))]
+
+// ---------- Hit targets ----------
+const touches: Record<Layout, Partial<Record<NetId, string[]>>> = {
+  breadboard: {
+    v5: ['devkit', 'pms'], v3: ['devkit', 'oled', 'sht'], gnd: ['devkit', 'pms', 'oled', 'sht', 'left', 'right'],
+    sda: ['devkit', 'oled', 'sht'], scl: ['devkit', 'oled', 'sht'],
+    tx: ['devkit', 'pms'], rx: ['devkit', 'pms'], set: ['devkit', 'pms'],
+    left: ['devkit'], right: ['devkit'],
+  },
+  proto2: {
+    v5: ['devkit', 'pms', 'caps'], v3: ['devkit', 'oled', 'sht', 'pullups-i2c', 'pullups-pms', 'caps'],
+    gnd: ['devkit', 'pms', 'oled', 'sht', 'left', 'right', 'pair', 'caps'],
+    sda: ['devkit', 'oled', 'sht', 'pullups-i2c'], scl: ['devkit', 'oled', 'sht', 'pullups-i2c'],
+    tx: ['devkit', 'pms'], rx: ['devkit', 'pms'], set: ['devkit', 'pms', 'pullups-pms'], reset: ['devkit', 'pms', 'pullups-pms'],
+    left: ['devkit'], right: ['devkit'], pair: ['devkit'],
+  },
+}
+// A net lights up the parts it touches, and a part lights up its nets.
+const related = (layout: Layout, id: string, part: boolean) => {
+  const t = touches[layout]
+  if (!part) return t[id as NetId] ?? []
+  return Object.entries(t).filter(([, parts]) => parts!.includes(id)).map(([net]) => net)
+}
+const hit = (
+  layout: Layout,
+  id: string,
+  opts: { base?: boolean; part?: boolean; extra?: string } = {},
+): astroHTML.JSX.SVGAttributes & Record<`data-${string}`, string | undefined> => ({
+  class: ['w-hit', opts.base && 'w-base', opts.extra].filter(Boolean).join(' '),
+  'data-id': id,
+  'data-ids': [id, ...(opts.base ? [] : related(layout, id, !!opts.part))].join(' '),
+  'data-base': opts.base ? '' : undefined,
+  role: 'button',
+  tabindex: 0,
+  'aria-label': byId[id].title,
+  'aria-controls': `wd-card-${id}`,
+  'aria-pressed': 'false',
+})
+const ends = (n: Net) => [...new Map(n.segs.flatMap((s) => [s.a, s.b]).map((p) => [p.join(','), p])).values()]
+const resistor = (x1: number, y1: number, x2: number, y2: number) => {
+  const vertical = x1 === x2
+  const cx = (x1 + x2) / 2
+  const cy = (y1 + y2) / 2
+  return { lead: `M${x1},${y1} L${x2},${y2}`, body: vertical ? { x: cx - 4.5, y: cy - 13, w: 9, h: 26 } : { x: cx - 13, y: cy - 4.5, w: 26, h: 9 }, cx, cy }
+}
+const r1 = resistor(468, 349, 528, 349)
+const r2 = resistor(468, 370, 528, 370)
+const r3 = resistor(652, 46, 652, 86)
+const r4 = resistor(670, 46, 670, 86)
+const layoutCards = (c: Card) => (c.layouts ?? ['breadboard', 'proto2']).join(' ')
+---
+
+<figure class="wd not-content" data-wiring>
+  <div class="w-bar">
+    <div class="w-tabs" role="tablist" aria-label="Choose a build" hidden>
+      <button type="button" role="tab" id="wd-tab-breadboard" aria-controls="wd-scene-breadboard" aria-selected="true" data-layout="breadboard">Breadboard</button>
+      <button type="button" role="tab" id="wd-tab-proto2" aria-controls="wd-scene-proto2" aria-selected="false" tabindex="-1" data-layout="proto2">Proto2 board</button>
+    </div>
+    <button class="w-switch" type="button" aria-pressed="false" aria-controls="wd-scene-breadboard" hidden>
+      <span class="w-switch-track" aria-hidden="true"><span class="w-switch-dot"></span></span>
+      Hide breadboard
+    </button>
+  </div>
+
+  <div class="w-scene" id="wd-scene-breadboard" role="tabpanel" aria-labelledby="wd-tab-breadboard" data-layout="breadboard">
+    <p class="w-caption">Breadboard build</p>
+    <svg viewBox="-100 -24 812 844" role="group" aria-label="Breadboard wiring: tap a wire or a part for details">
+      <defs>
+        <!-- Crossing gaps only where wires cross, never over the parts. -->
+        <clipPath id="wd-gap-clip"><rect x="-6" y="182" width="700" height="276" /></clipPath>
+      </defs>
+      <rect class="w-mat w-bb-only" x="-100" y="-24" width="812" height="844" rx="18" />
+      <rect class="w-mat w-direct-only" x="-100" y="-24" width="812" height="696" rx="18" />
+
+      <!-- Two breadboards, plus board 1's bottom rails cut off and moved to the top -->
+      <g {...hit('breadboard', 'breadboard', { base: true, extra: 'w-bb-only' })}>
+        <rect class="w-bb" x="40" y="186" width="656" height="44" rx="6" />
+        <rect class="w-bb" x="40" y="236" width="656" height="252" rx="6" />
+        <rect class="w-bb" x="40" y="494" width="656" height="318" rx="6" />
+        <rect class="w-channel" x="40" y="377" width="656" height="14" />
+        <rect class="w-channel" x="40" y="649" width="656" height="14" />
+        <path class="w-rail is-plus" d={`M56,${row(-3) - 8} H680 M56,${row(0) - 8} H680 M56,${row(17) - 8} H680 M56,${row(34) + 8} H680`} />
+        <path class="w-rail is-minus" d={`M56,${row(-2) + 8} H680 M56,${row(1) + 8} H680 M56,${row(18) + 8} H680 M56,${row(33) - 8} H680`} />
+        <path class="w-holes" d={bbHoles} />
+        {[[row(0), '+'], [row(1), '−'], [row(17), '+'], [row(18), '−'], [row(33), '−'], [row(34), '+']].map(([y, s]) => (
+          <text class="w-label is-sign" x="47" y={Number(y) + 4}>{s}</text>
+        ))}
+        {[[rail.scl, 'SCL'], [rail.sda, 'SDA']].map(([y, s]) => (
+          <text class="w-label is-sign is-end" x="34" y={Number(y) + 4}>{s}</text>
+        ))}
+      </g>
+
+      <!-- Devkit across the seam -->
+      <g {...hit('breadboard', 'devkit', { part: true })}>
+        <ellipse class="w-shadow is-direct-only" cx="390" cy="652" rx="210" ry="8" />
+        <rect class="w-pcb" x="180" y="462" width="396" height="180" rx="8" />
+        <path class="w-antenna" d="M186,476 v148 M194,476 h0 M186,484 h12 v14 h-8 v14 h8 v14 h-8 v14 h8 v14 h-8 v14 h8 v14 h-8 v14 h8 v14 h-8 v14 h8" />
+        <rect class="w-can" x="210" y="500" width="112" height="104" rx="5" />
+        <rect class="w-can-inner" x="220" y="510" width="92" height="84" rx="3" />
+        <rect class="w-usb" x="566" y="536" width="30" height="32" rx="6" />
+        <rect class="w-tact" x="534" y="500" width="14" height="10" rx="2" />
+        <rect class="w-tact" x="534" y="594" width="14" height="10" rx="2" />
+        <circle class="w-led-halo" cx="508" cy="552" r="8" />
+        <circle class="w-led" cx="508" cy="552" r="4" />
+        {leftHeader.map((name) => <rect class="w-pin" x={X(name) - 3.5} y={TOP - 3.5} width="7" height="7" rx="1" />)}
+        {rightHeader.map((_, i) => <rect class="w-pin" x={216 + i * P - 3.5} y={BOT - 3.5} width="7" height="7" rx="1" />)}
+        {bbLabels.map((name) => <text class="w-label is-pcb" x={X(name)} y={TOP + 18}>{name}</text>)}
+      </g>
+
+      <!-- Buttons, plugged into board 1 -->
+      {
+        bbButtons.map((b) => (
+          <g {...hit('breadboard', b.id, { part: true })}>
+            <rect class="w-leg" x={b.sig - 2.5} y={legY - 2.5} width="5" height="5" />
+            <rect class="w-leg" x={b.gnd - 2.5} y={legY - 2.5} width="5" height="5" />
+            <rect class="w-btn" x={b.sig - 4} y={legY - 12} width="24" height="24" rx="3" />
+            <circle class="w-cap" cx={b.sig + 8} cy={legY} r="7" />
+          </g>
+        ))
+      }
+
+      <!-- PMS5003 and its adapter -->
+      <g {...hit('breadboard', 'pms', { part: true })}>
+        <g transform={`translate(0,${-UP})`}>
+          <ellipse class="w-shadow" cx="448" cy="174" rx="112" ry="6" />
+          <rect class="w-metal" x="336" y="32" width="224" height="138" rx="8" />
+          <circle class="w-grille" cx={fan.x} cy={fan.y} r="44" />
+          {blades.map((d) => <path class="w-blade" d={d} />)}
+          <circle class="w-hub" cx={fan.x} cy={fan.y} r="8" />
+          {[56, 72, 88, 104, 120, 136].map((y) => <rect class="w-vent" x="470" y={y} width="72" height="7" rx="3.5" />)}
+          <path class="w-cable" d="M520,170 C520,184 450,180 420,190" />
+          <rect class="w-adapter" x="332" y="188" width="104" height="34" rx="4" />
+        </g>
+        {pmsLabels.map(([x]) => <rect class="w-pin" x={x - 3} y={pms.y - 3} width="6" height="6" rx="1" />)}
+        {pmsLabels.map(([x, label]) => <text class="w-label is-mod is-small" x={x} y={pms.y - 10}>{label}</text>)}
+      </g>
+
+      <!-- OLED -->
+      <g {...hit('breadboard', 'oled', { part: true })}>
+        <g transform={`translate(${OLED_DX},${-UP})`}>
+          <ellipse class="w-shadow" cx="256" cy="226" rx="70" ry="5" />
+          <rect class="w-oled" x="186" y="68" width="140" height="154" rx="6" />
+          {[[194, 76], [318, 76], [194, 214], [318, 214]].map(([x, y]) => <circle class="w-mount" cx={x} cy={y} r="4" />)}
+          <rect class="w-screen" x="198" y="88" width="116" height="84" rx="3" />
+          <text class="w-screen-text" x="214" y="132">42</text>
+          <rect class="w-screen-bar" x="262" y="112" width="40" height="5" rx="2" />
+          <rect class="w-screen-bar is-soft" x="262" y="124" width="28" height="5" rx="2" />
+          <rect class="w-screen-bar is-soft" x="214" y="150" width="88" height="4" rx="2" />
+        </g>
+        {[oled.gnd, oled.v3, oled.scl, oled.sda].map((x) => <rect class="w-pin" x={x - 3} y={oled.y - 3} width="6" height="6" rx="1" />)}
+        {[[oled.gnd, 'GND'], [oled.v3, 'VCC'], [oled.scl, 'SCL'], [oled.sda, 'SDA']].map(([x, l]) => <text class="w-label is-mod is-small" x={x} y={oled.y - 16}>{l}</text>)}
+      </g>
+
+      <!-- SHT30, on wires, away from the devkit's warmth -->
+      <g {...hit('breadboard', 'sht', { part: true })}>
+        <ellipse class="w-shadow" cx="-52" cy="462" rx="44" ry="5" />
+        <rect class="w-sht" x="-92" y="364" width="80" height="92" rx="6" />
+        <circle class="w-mount" cx="-78" cy="378" r="4.5" />
+        <rect class="w-chip" x="-74" y="398" width="22" height="22" rx="3" />
+        <circle class="w-chip-dot" cx="-69" cy="403" r="1.6" />
+        {[sht.v3, sht.gnd, sht.scl, sht.sda].map((y) => <rect class="w-pin" x={sht.x - 3} y={y - 3} width="6" height="6" rx="1" />)}
+        {[[sht.v3, 'VIN'], [sht.gnd, 'GND'], [sht.scl, 'SCL'], [sht.sda, 'SDA']].map(([y, l]) => (
+          <text class="w-label is-mod is-small is-end" x={sht.x - 7} y={Number(y) + 3}>{l}</text>
+        ))}
+      </g>
+
+      <!-- Jumper wires on the breadboard -->
+      {
+        bbNets.map((n) => (
+          <g {...hit('breadboard', n.id, { extra: 'w-bb-only' })} style={`--c: var(--w-${tone[n.id]})`}>
+            {n.segs.map((s) => <path class="w-target" d={s.d} />)}
+            {n.segs.map((s) => <path class="w-glow" d={s.d} />)}
+            {n.segs.map((s) => (
+              <g>
+                <path class="w-edge" d={s.d} />
+                <path class="w-wire" d={s.d} />
+                <path class="w-shine" d={s.d} />
+              </g>
+            ))}
+            {ends(n).map(([x, y]) => <circle class="w-plug" cx={x} cy={y} r="3.2" />)}
+          </g>
+        ))
+      }
+
+      <!-- The same parts, wired directly -->
+      {
+        dNets.map((n) => (
+          <g {...hit('breadboard', n.id, { extra: 'w-direct-only' })} style={`--c: var(--w-${tone[n.id]})`}>
+            {n.segs.map((s) => <path class="w-target" d={s.d} />)}
+            {n.segs.map((s) => <path class="w-gap" d={s.d} clip-path="url(#wd-gap-clip)" />)}
+            {n.segs.map((s) => <path class="w-glow" d={s.d} />)}
+            {n.segs.map((s) => (
+              <g>
+                <path class="w-edge" d={s.d} />
+                <path class="w-wire" d={s.d} />
+                <path class="w-shine" d={s.d} />
+              </g>
+            ))}
+            {ends(n).map(([x, y]) => <circle class="w-plug" cx={x} cy={y} r="3.2" />)}
+            {n.joins?.map(([x, y]) => <circle class="w-join" cx={x} cy={y} r="4.6" />)}
+          </g>
+        ))
+      }
+    </svg>
+  </div>
+
+  <div class="w-scene" id="wd-scene-proto2" role="tabpanel" aria-labelledby="wd-tab-proto2" data-layout="proto2">
+    <p class="w-caption">Proto2 carrier</p>
+    <svg viewBox="24 0 912 436" role="group" aria-label="Proto2 wiring: tap a trace or a part for details">
+      <rect class="w-mat" x="24" y="0" width="912" height="436" rx="18" />
+
+      <!-- The board -->
+      <g {...hit('proto2', 'proto2', { base: true })}>
+        <rect class="w-board" x="40" y="30" width="878" height="390" rx="22" />
+        {[[63, 56], [894, 56], [63, 396], [894, 396]].map(([x, y]) => <circle class="w-hole-plated" cx={x} cy={y} r="8" />)}
+      </g>
+
+      <!-- OLED area and its socket -->
+      <g {...hit('proto2', 'oled', { part: true })}>
+        <rect class="w-silk" x="84" y="40" width="224" height="217" rx="8" />
+        <rect class="w-ghost" x="108" y="84" width="176" height="128" rx="10" />
+        <rect class="w-header" x="164" y="46" width="68" height="12" rx="3" />
+        {[j2.gnd, j2.v3, j2.scl, j2.sda].map((x) => <circle class="w-pad" cx={x} cy={j2.y} r="3.6" />)}
+        <text class="w-label is-small is-board" x={j2.gnd} y="74">GND</text>
+        <text class="w-label is-small is-board" x={j2.v3} y="74">VCC</text>
+        <text class="w-label is-small is-board" x={j2.scl} y="74">SCL</text>
+        <text class="w-label is-small is-board is-start" x={j2.sda + 4} y="74">SDA</text>
+      </g>
+
+      <!-- PMS5003 bed and J1 -->
+      <g {...hit('proto2', 'pms', { part: true })}>
+        <rect class="w-silk" x="321" y="40" width="309" height="236" rx="8" />
+        <circle class="w-ghost" cx="420" cy="158" r="54" />
+        <rect class="w-ghost" x="500" y="96" width="96" height="124" rx="10" />
+        <rect class="w-header" x="652" y="170" width="13" height="70" rx="3" />
+        {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => <rect class="w-pad" x="655" y={j1(n) - 2.6} width="6" height="5.2" rx="1" />)}
+      </g>
+
+      <!-- SHT30 sockets -->
+      <g {...hit('proto2', 'sht', { part: true })}>
+        <rect class="w-silk is-solid" x="332" y="330" width="80" height="58" rx="4" />
+        {[j3.gnd, j3.scl].map((x) => <circle class="w-pad" cx={x} cy="340" r="3.6" />)}
+        {[j3.v3, j3.gnd, j3.scl, j3.sda].map((x) => <circle class="w-pad" cx={x} cy={j3.y} r="3.6" />)}
+      </g>
+
+      <!-- Buttons -->
+      {
+        buttons.map((b) => (
+          <g {...hit('proto2', b.id, { part: true })}>
+            {[[-13, -13], [13, -13], [-13, 13], [13, 13]].map(([dx, dy]) => <circle class="w-pad" cx={b.x + dx} cy={302 + dy} r="3.6" />)}
+            <rect class="w-btn" x={b.x - 11} y="291" width="22" height="22" rx="3" />
+            <circle class="w-cap" cx={b.x} cy="302" r="7" />
+            <text class="w-label is-small is-board" x={b.x + 3} y="334">{b.label}</text>
+          </g>
+        ))
+      }
+
+      <!-- Devkit in its sockets, antenna over the top edge -->
+      <g {...hit('proto2', 'devkit', { part: true })}>
+        <rect class="w-pcb" x="681" y="30" width="181" height="374" rx="8" />
+        <rect class="w-pcb" x="722" y="6" width="100" height="40" rx="5" />
+        <path class="w-antenna" d="M732,12 h80 v6 h-72 v6 h72" />
+        <rect class="w-can" x="728" y="32" width="88" height="56" rx="4" />
+        <rect class="w-usb" x="760" y="396" width="24" height="18" rx="5" />
+        <circle class="w-led-halo" cx="800" cy="340" r="7" />
+        <circle class="w-led" cx="800" cy="340" r="3.5" />
+        {leftHeader.map((name) => <rect class="w-pin" x={LX - 3} y={py(name) - 3} width="6" height="6" rx="1" />)}
+        {rightHeader.map((_, i) => <rect class="w-pin" x="847" y={f(50 + i * 15.7) - 3} width="6" height="6" rx="1" />)}
+        {p2Labels.map((name) => <text class="w-label is-pcb is-start" x={LX + 9} y={py(name) + 3.3}>{name}</text>)}
+      </g>
+
+      <!-- Traces -->
+      {
+        p2Nets.map((n) => (
+          <g {...hit('proto2', n.id)} style={`--c: var(--w-${tone[n.id]})`}>
+            {n.segs.map((s) => <path class="w-target" d={s.d} />)}
+            {n.segs.map((s) => <path class="w-halo" d={s.d} />)}
+            {n.segs.map((s) => <path class="w-glow is-trace" d={s.d} />)}
+            {n.segs.map((s) => <path class="w-trace" d={s.d} />)}
+            {ends(n).map(([x, y]) => <circle class="w-plug is-trace" cx={x} cy={y} r="2.6" />)}
+          </g>
+        ))
+      }
+
+      <!-- Passives -->
+      <g {...hit('proto2', 'pullups-pms', { part: true })}>
+        {[r3, r4].map((r) => (
+          <g>
+            <path class="w-lead" d={r.lead} />
+            <rect class="w-res" x={r.body.x} y={r.body.y} width={r.body.w} height={r.body.h} rx="4" />
+            <path class="w-band" d={`M${r.cx - 4.5},${r.cy - 6} h9 M${r.cx - 4.5},${r.cy} h9`} />
+          </g>
+        ))}
+      </g>
+      <g {...hit('proto2', 'pullups-i2c', { part: true })}>
+        {[r1, r2].map((r) => (
+          <g>
+            <path class="w-lead" d={r.lead} />
+            <rect class="w-res" x={r.body.x} y={r.body.y} width={r.body.w} height={r.body.h} rx="4" />
+            <path class="w-band" d={`M${r.cx - 6},${r.cy - 4.5} v9 M${r.cx},${r.cy - 4.5} v9`} />
+          </g>
+        ))}
+      </g>
+      <g {...hit('proto2', 'caps', { part: true })}>
+        <ellipse class="w-ceramic" cx="496" cy="289" rx="10" ry="5.5" />
+        <circle class="w-elec" cx="498" cy="320" r="9" />
+        <path class="w-elec-mark" d="M492,320 h12" />
+        <ellipse class="w-ceramic" cx="584" cy="392" rx="10" ry="5.5" />
+        <circle class="w-elec" cx="634" cy="378" r="15" />
+        <path class="w-elec-mark" d="M624,378 h20" />
+      </g>
+    </svg>
+  </div>
+
+  <div class="w-panel" aria-live="polite">
+    {
+      cards.map((card) => (
+        <section
+          class={`w-card${card.id.startsWith('overview') ? ' is-overview' : ''}${card.id === 'overview-breadboard' ? ' is-active' : ''}`}
+          id={`wd-card-${card.id}`}
+          data-id={card.id}
+          data-layouts={layoutCards(card)}
+        >
+          <header>
+            <h3>{card.title}</h3>
+            {card.tech && <span class="w-tech">{card.tech}</span>}
+          </header>
+          <p>
+            {card.body}
+            {card.hint && <span class={card.id.startsWith('overview') ? 'w-hint is-js' : 'w-hint'}> {card.hint}</span>}
+          </p>
+          {card.chips && (
+            <ul class="w-chips">
+              {card.chips.map((chip) => (
+                <li>
+                  <code>{chip}</code>
+                </li>
+              ))}
+            </ul>
+          )}
+          {card.links && (
+            <p class="w-links">
+              {card.links.map((link) => (
+                <a href={link.href}>
+                  {link.label}
+                  <svg viewBox="0 0 16 16" aria-hidden="true">
+                    <path d="M3 8h10M9 4l4 4-4 4" />
+                  </svg>
+                </a>
+              ))}
+            </p>
+          )}
+        </section>
+      ))
+    }
+  </div>
+  <button class="w-toggle" type="button" aria-expanded="false" hidden>Show all details</button>
+</figure>
+
+<script>
+  const KEY = 'oa-wiring-layout'
+  const DIRECT = 'oa-wiring-direct'
+  type Layout = 'breadboard' | 'proto2'
+
+  for (const fig of document.querySelectorAll<HTMLElement>('[data-wiring]')) {
+    const tabs = [...fig.querySelectorAll<HTMLButtonElement>('[role="tab"]')]
+    const scenes = [...fig.querySelectorAll<HTMLElement>('.w-scene')]
+    const cards = [...fig.querySelectorAll<HTMLElement>('.w-card')]
+    const toggle = fig.querySelector<HTMLButtonElement>('.w-toggle')!
+    const sw = fig.querySelector<HTMLButtonElement>('.w-switch')!
+    const bbScene = fig.querySelector<HTMLElement>('#wd-scene-breadboard')!
+    const bbSvg = bbScene.querySelector('svg')!
+    let layout: Layout = 'breadboard'
+    let direct = false
+    try {
+      const saved = localStorage.getItem(KEY)
+      if (saved === 'breadboard' || saved === 'proto2') layout = saved
+      direct = localStorage.getItem(DIRECT) === '1'
+    } catch {}
+    let pinned = `overview-${layout}`
+
+    const bases = new Set([...fig.querySelectorAll<SVGGElement>('[data-base]')].map((b) => b.dataset.id))
+    const hits = () => [...fig.querySelectorAll<SVGGElement>(`.w-scene[data-layout="${layout}"] .w-hit`)]
+    const show = (id: string) => {
+      // The bare board shows its card without dimming the parts on it.
+      fig.classList.toggle('has-active', !id.startsWith('overview') && !bases.has(id))
+      for (const h of hits()) {
+        h.classList.toggle('is-active', h.dataset.ids!.split(' ').includes(id))
+        h.setAttribute('aria-pressed', String(h.dataset.id === id && pinned === id))
+      }
+      for (const c of cards) c.classList.toggle('is-active', c.dataset.id === id)
+    }
+
+    const setDirect = (on: boolean) => {
+      direct = on
+      bbScene.classList.toggle('is-direct', on)
+      // Without the boards, crop the empty space they leave below the devkit.
+      bbSvg.setAttribute('viewBox', on ? '-100 -24 812 696' : '-100 -24 812 844')
+      sw.setAttribute('aria-pressed', String(on))
+      if (pinned === 'breadboard') pinned = `overview-${layout}`
+      show(pinned)
+      try {
+        localStorage.setItem(DIRECT, on ? '1' : '0')
+      } catch {}
+    }
+
+    const setLayout = (next: Layout, focus = false) => {
+      layout = next
+      for (const t of tabs) {
+        const on = t.dataset.layout === next
+        t.setAttribute('aria-selected', String(on))
+        t.tabIndex = on ? 0 : -1
+        if (on && focus) t.focus()
+      }
+      for (const s of scenes) s.hidden = s.dataset.layout !== next
+      for (const c of cards) c.classList.toggle('is-other', !c.dataset.layouts!.split(' ').includes(next))
+      sw.hidden = next !== 'breadboard'
+      pinned = `overview-${next}`
+      show(pinned)
+      try {
+        localStorage.setItem(KEY, next)
+      } catch {}
+    }
+
+    for (const h of fig.querySelectorAll<SVGGElement>('.w-hit')) {
+      const id = h.dataset.id!
+      h.addEventListener('focus', () => show(id))
+      h.addEventListener('blur', () => show(pinned))
+      h.addEventListener('click', (e) => {
+        e.stopPropagation()
+        pinned = pinned === id ? `overview-${layout}` : id
+        show(pinned)
+      })
+      h.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault()
+          h.dispatchEvent(new MouseEvent('click'))
+        }
+      })
+    }
+    for (const svg of fig.querySelectorAll<SVGSVGElement>('.w-scene svg')) {
+      // Over a wire or part, trace it; over the bare board or a gap, show everything again.
+      svg.addEventListener('pointerover', (e) => {
+        if (e.pointerType !== 'mouse') return
+        const h = (e.target as Element).closest<SVGGElement>('.w-hit')
+        show(h && !('base' in h.dataset) ? h.dataset.id! : pinned)
+      })
+      svg.addEventListener('pointerleave', () => show(pinned))
+    }
+
+    tabs.forEach((t, i) => {
+      t.addEventListener('click', () => setLayout(t.dataset.layout as Layout))
+      t.addEventListener('keydown', (e) => {
+        const step = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0
+        if (!step) return
+        e.preventDefault()
+        setLayout(tabs[(i + step + tabs.length) % tabs.length].dataset.layout as Layout, true)
+      })
+    })
+    sw.addEventListener('click', () => setDirect(!direct))
+
+    toggle.hidden = false
+    toggle.addEventListener('click', () => {
+      const all = !fig.classList.contains('is-all')
+      fig.classList.toggle('is-all', all)
+      toggle.setAttribute('aria-expanded', String(all))
+      toggle.textContent = all ? 'Show less' : 'Show all details'
+    })
+
+    fig.querySelector<HTMLElement>('.w-tabs')!.hidden = false
+    fig.classList.add('is-ready')
+    setLayout(layout)
+    setDirect(direct)
+  }
+</script>
+
+<style>
+  .wd {
+    /* Realistic part colours: they stay the same in both themes, so the
+       drawing looks like the parts on your desk. */
+    --w-mat: #eceee9;
+    --w-bb: #f7f6f2;
+    --w-bb-edge: #cfcbc2;
+    --w-hole: #3d3d3d;
+    --w-rail-red: #d9453a;
+    --w-rail-blue: #2f6fd6;
+    --w-pcb: #1c1d1f;
+    --w-pcb-ink: #f2f2f2;
+    --w-can: #c9cdd2;
+    --w-can-edge: #8d9298;
+    --w-pin: #d4a540;
+    --w-metal: #d5d8db;
+    --w-metal-edge: #9aa0a6;
+    --w-oled: #1f4f99;
+    --w-sht: #5b3d8b;
+    --w-adapter: #24603a;
+    --w-board: #1d5b3a;
+    --w-silk-ink: #eef4ef;
+    --w-shadow: rgb(0 0 0 / 0.14);
+    --w-glow-warm: #f2c46d;
+
+    /* Jumper wires, in the usual colours. */
+    --w-v5: #d7372b;
+    --w-v3: #f28c1c;
+    --w-gnd: #1e1e1e;
+    --w-sda: #2f6fdb;
+    --w-scl: #e2bd00;
+    --w-tx: #2e9e47;
+    --w-rx: #8e44ad;
+    --w-ctl: #7d858d;
+    --w-btn: #11a0a0;
+
+    --w-card: color-mix(in srgb, var(--sl-color-gray-6) 45%, var(--sl-color-bg));
+    --w-line: var(--sl-color-hairline);
+    --w-ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+
+    margin: 1.5rem 0 2.5rem;
+    padding: clamp(0.75rem, 3vw, 1.5rem);
+    border: 1px solid var(--w-line);
+    border-radius: 1.5rem;
+    background:
+      radial-gradient(circle at 8% 12%, color-mix(in srgb, var(--sl-color-accent) 12%, transparent), transparent 42%),
+      radial-gradient(circle at 95% 92%, color-mix(in srgb, var(--oa-sage, #6f7f5c) 12%, transparent), transparent 42%),
+      var(--w-card);
+    box-shadow: 0 1px 2px rgb(59 39 22 / 0.05), 0 10px 28px -14px rgb(59 39 22 / 0.24);
+  }
+  /* In dark mode the desk is dimmed a little, so it doesn't glare. */
+  :global(:root[data-theme='dark']) .wd {
+    --w-mat: #c9ccc6;
+    --w-bb: #e6e4de;
+    box-shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 12px 30px -14px rgb(0 0 0 / 0.6);
+  }
+
+  /* Tabs and the breadboard switch */
+  .w-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem 1rem;
+    margin-bottom: 0.75rem;
+  }
+  .w-tabs {
+    display: inline-flex;
+    gap: 0.25rem;
+    padding: 0.25rem;
+    border: 1px solid var(--w-line);
+    border-radius: 999px;
+    background: var(--sl-color-bg);
+  }
+  .w-tabs[hidden],
+  .w-switch[hidden] { display: none; }
+  .w-tabs button {
+    padding: 0.3rem 0.9rem;
+    border: 0;
+    border-radius: 999px;
+    font: inherit;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--sl-color-gray-2);
+    background: transparent;
+    cursor: pointer;
+    transition: background 0.3s var(--w-ease), color 0.3s var(--w-ease);
+  }
+  .w-tabs button[aria-selected='true'] {
+    color: var(--sl-color-text-accent);
+    background: color-mix(in srgb, var(--sl-color-accent) 12%, transparent);
+  }
+  .w-switch {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.3rem 0.4rem;
+    border: 0;
+    font: inherit;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--sl-color-gray-2);
+    background: transparent;
+    cursor: pointer;
+  }
+  .w-switch-track {
+    position: relative;
+    width: 2.1rem;
+    height: 1.2rem;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--sl-color-gray-4) 60%, transparent);
+    transition: background 0.3s var(--w-ease);
+  }
+  .w-switch-dot {
+    position: absolute;
+    top: 0.15rem;
+    left: 0.15rem;
+    width: 0.9rem;
+    height: 0.9rem;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 1px 2px rgb(0 0 0 / 0.3);
+    transition: transform 0.3s var(--w-ease);
+  }
+  .w-switch[aria-pressed='true'] { color: var(--sl-color-text-accent); }
+  .w-switch[aria-pressed='true'] .w-switch-track { background: var(--sl-color-accent); }
+  .w-switch[aria-pressed='true'] .w-switch-dot { transform: translateX(0.9rem); }
+  .w-tabs button:focus-visible,
+  .w-switch:focus-visible { outline: 2px solid var(--sl-color-accent); outline-offset: 2px; border-radius: 999px; }
+
+  /* Scenes scroll sideways on narrow screens rather than shrinking too far. */
+  .w-scene { overflow-x: auto; }
+  .w-scene[hidden] { display: none; }
+  .w-scene + .w-scene { margin-top: 1rem; }
+  .wd.is-ready .w-scene + .w-scene { margin-top: 0; }
+  .w-caption {
+    margin: 0 0 0.5rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--sl-color-gray-2);
+  }
+  .wd.is-ready .w-caption { display: none; }
+  .w-scene svg {
+    display: block;
+    width: 100%;
+    min-width: 520px;
+    height: auto;
+    /* Keep the whole drawing and its tabs comfortably on screen, with room to
+       scroll; the drawing scales down and centres inside. */
+    max-height: min(calc(100svh - var(--sl-nav-height) - 13rem), 34rem);
+  }
+  .w-scene.is-direct .w-bb-only,
+  .w-scene:not(.is-direct) .w-direct-only,
+  .w-scene:not(.is-direct) .is-direct-only { display: none; }
+
+  /* Desk, boards and parts */
+  .w-mat { fill: var(--w-mat); }
+  .w-shadow { fill: var(--w-shadow); }
+  .w-bb { fill: var(--w-bb); stroke: var(--w-bb-edge); stroke-width: 1.5; }
+  .w-channel { fill: color-mix(in srgb, var(--w-bb-edge) 55%, var(--w-bb)); }
+  .w-holes { fill: var(--w-hole); opacity: 0.75; }
+  .w-rail { fill: none; stroke-width: 2; }
+  .w-rail.is-plus { stroke: var(--w-rail-red); }
+  .w-rail.is-minus { stroke: var(--w-rail-blue); }
+  .w-pcb { fill: var(--w-pcb); stroke: #000; stroke-width: 1; }
+  .w-can { fill: var(--w-can); stroke: var(--w-can-edge); stroke-width: 1.5; }
+  .w-can-inner { fill: none; stroke: color-mix(in srgb, var(--w-can-edge) 60%, transparent); stroke-width: 1; }
+  .w-antenna { fill: none; stroke: var(--w-pin); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .w-usb { fill: #b8bcc1; stroke: #7d8287; stroke-width: 1.5; }
+  .w-tact { fill: #e9e9e9; stroke: #888; stroke-width: 1; }
+  .w-pin { fill: var(--w-pin); stroke: #8a6a22; stroke-width: 0.8; }
+  .w-led { fill: var(--w-glow-warm); }
+  .w-led-halo { fill: color-mix(in srgb, var(--w-glow-warm) 40%, transparent); }
+  .w-metal { fill: var(--w-metal); stroke: var(--w-metal-edge); stroke-width: 2; }
+  .w-grille { fill: #4a4f55; stroke: var(--w-metal-edge); stroke-width: 2; }
+  .w-blade { fill: none; stroke: #9aa0a6; stroke-width: 3; stroke-linecap: round; }
+  .w-hub { fill: #c9cdd2; }
+  .w-vent { fill: #50555b; }
+  .w-cable { fill: none; stroke: #f1f1f1; stroke-width: 7; stroke-linecap: round; }
+  .w-adapter { fill: var(--w-adapter); stroke: #123a22; stroke-width: 1.2; }
+  .w-oled { fill: var(--w-oled); stroke: #123266; stroke-width: 1.2; }
+  .w-sht { fill: var(--w-sht); stroke: #39245c; stroke-width: 1.2; }
+  .w-mount { fill: #e8e8e8; stroke: #b4b4b4; stroke-width: 1; }
+  .w-screen { fill: #07090c; }
+  .w-screen-text { font: 700 34px var(--sl-font-mono, ui-monospace, monospace); fill: #7fd6ff; pointer-events: none; }
+  .w-screen-bar { fill: #7fd6ff; }
+  .w-screen-bar.is-soft { opacity: 0.45; }
+  .w-chip { fill: #2a2a2a; }
+  .w-chip-dot { fill: #ddd; }
+  .w-btn { fill: #262626; stroke: #9aa0a6; stroke-width: 1.5; }
+  .w-cap { fill: #4a4a4a; stroke: #111; stroke-width: 1; }
+  .w-leg { fill: #9aa0a6; }
+
+  /* Proto2 */
+  .w-board { fill: var(--w-board); stroke: #0f3a24; stroke-width: 2; }
+  .w-hole-plated { fill: var(--w-mat); stroke: var(--w-pin); stroke-width: 2.5; }
+  .w-silk { fill: none; stroke: color-mix(in srgb, var(--w-silk-ink) 70%, transparent); stroke-width: 1.5; stroke-dasharray: 5 5; }
+  .w-silk.is-solid { stroke-dasharray: none; }
+  .w-ghost { fill: color-mix(in srgb, #fff 5%, transparent); stroke: color-mix(in srgb, var(--w-silk-ink) 20%, transparent); stroke-width: 1.5; }
+  .w-header { fill: #111; }
+  .w-pad { fill: var(--w-pin); stroke: #8a6a22; stroke-width: 1; }
+  .w-lead { fill: none; stroke: #c4c8cc; stroke-width: 1.6; stroke-linecap: round; }
+  .w-res { fill: #e6cfa0; stroke: #a88a55; stroke-width: 1.2; }
+  .w-band { fill: none; stroke: #b5402f; stroke-width: 2; }
+  .w-ceramic { fill: #d7954f; stroke: #9f6a2f; stroke-width: 1.2; }
+  .w-elec { fill: #3b67b0; stroke: #234378; stroke-width: 1.2; }
+  .w-elec-mark { stroke: #e9eef3; stroke-width: 2; stroke-linecap: round; }
+
+  /* Pin labels: small, only where wires land. */
+  .w-label {
+    font-family: var(--sl-font-mono, ui-monospace, monospace);
+    font-size: 9.5px;
+    font-weight: 700;
+    text-anchor: middle;
+    fill: #1e1e1e;
+    paint-order: stroke;
+    stroke: var(--w-bb);
+    stroke-width: 2.5px;
+    stroke-linejoin: round;
+    pointer-events: none;
+  }
+  .w-label.is-small { font-size: 8px; }
+  .w-label.is-start { text-anchor: start; }
+  .w-label.is-end { text-anchor: end; }
+  .w-label.is-pcb { fill: var(--w-pcb-ink); stroke: var(--w-pcb); }
+  .w-label.is-mod { fill: #fff; stroke: none; }
+  .w-label.is-board { fill: var(--w-silk-ink); stroke: var(--w-board); }
+  .w-label.is-sign { font-size: 13px; stroke: none; fill: #555; }
+
+  /* Wires and traces */
+  .w-target { fill: none; stroke: transparent; stroke-width: 11; stroke-linecap: round; }
+  .w-edge { fill: none; stroke: color-mix(in srgb, var(--c) 62%, #000); stroke-width: 6.5; stroke-linecap: round; stroke-linejoin: round; }
+  .w-wire { fill: none; stroke: var(--c); stroke-width: 4.5; stroke-linecap: round; stroke-linejoin: round; }
+  .w-shine { fill: none; stroke: rgb(255 255 255 / 0.35); stroke-width: 1.2; stroke-linecap: round; transform: translate(-0.8px, -0.8px); }
+  .w-gap { fill: none; stroke: var(--w-mat); stroke-width: 11; stroke-linecap: butt; }
+  .w-plug { fill: #2b2b2b; stroke: #9aa0a6; stroke-width: 1; }
+  .w-join { fill: var(--c); stroke: color-mix(in srgb, var(--c) 62%, #000); stroke-width: 1.5; }
+  .w-halo { fill: none; stroke: var(--w-board); stroke-width: 7.5; stroke-linecap: round; stroke-linejoin: round; }
+  /* Black ground needs a pale edge to show on the green board. */
+  [style*='--w-gnd'] .w-halo { stroke: color-mix(in srgb, #fff 60%, var(--w-board)); stroke-width: 5.6; }
+  .w-trace { fill: none; stroke: var(--c); stroke-width: 3.2; stroke-linecap: round; stroke-linejoin: round; }
+  .w-plug.is-trace { fill: var(--c); stroke: var(--w-board); stroke-width: 1.2; }
+  .w-glow { fill: none; stroke: color-mix(in srgb, var(--c) 45%, transparent); stroke-width: 14; stroke-linecap: round; stroke-linejoin: round; opacity: 0; transition: opacity 0.4s var(--w-ease); }
+  .w-glow.is-trace { stroke-width: 10; }
+  /* Ground is black, so it glows in the accent colour instead. */
+  [style*='--w-gnd'] .w-glow { stroke: color-mix(in srgb, var(--sl-color-accent) 45%, transparent); }
+
+  /* Hotspots: dim everything but the traced net and its parts. */
+  .w-hit {
+    cursor: pointer;
+    outline: none;
+    transition: opacity 0.4s var(--w-ease);
+  }
+  /* The devkit stays visible: every wire leads back to it. */
+  .wd.has-active .w-hit:not(.is-active):not(.w-base):not([data-id='devkit']) { opacity: 0.22; }
+  .w-hit.is-active .w-glow { opacity: 1; animation: w-glow 4s ease-in-out infinite; }
+  .w-hit:focus-visible { filter: drop-shadow(0 0 1.5px var(--sl-color-accent)) drop-shadow(0 0 1.5px var(--sl-color-accent)); }
+
+  /* Cards: all listed without JavaScript, one at a time with it. */
+  .w-panel {
+    display: grid;
+    gap: 0.75rem;
+    margin-top: 0.75rem;
+  }
+  .wd.is-ready:not(.is-all) .w-card:not(.is-active),
+  .wd.is-ready .w-card.is-other,
+  .wd.is-all .w-card.is-overview { display: none; }
+  .wd.is-ready:not(.is-all) .w-panel { min-height: 9.5rem; }
+  .w-card {
+    padding: 1rem 1.15rem;
+    border: 1px solid var(--w-line);
+    border-radius: 1rem;
+    background: var(--sl-color-bg);
+    box-shadow: 0 1px 2px rgb(59 39 22 / 0.04);
+    animation: w-rise 0.5s var(--w-ease);
+  }
+  .w-card header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem 0.6rem;
+  }
+  .w-card h3 {
+    margin: 0;
+    font-size: 1rem;
+    letter-spacing: -0.01em;
+    color: var(--sl-color-white);
+  }
+  .w-tech {
+    padding: 0.1rem 0.55rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--sl-color-text-accent);
+    background: color-mix(in srgb, var(--sl-color-accent) 10%, transparent);
+  }
+  .w-hint.is-js { display: none; }
+  .wd.is-ready .w-hint.is-js { display: inline; }
+  .w-card p {
+    margin: 0.4rem 0 0;
+    color: var(--sl-color-gray-2);
+  }
+  .w-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin: 0.6rem 0 0;
+    padding: 0;
+    list-style: none;
+  }
+  .w-chips code {
+    padding: 0.1rem 0.45rem;
+    border: 1px solid var(--w-line);
+    border-radius: 0.4rem;
+    font-size: 0.75rem;
+    background: var(--w-card);
+  }
+  .w-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 1rem;
+  }
+  .w-links a {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--sl-color-text-accent);
+    text-decoration: none;
+  }
+  .w-links a:hover { text-decoration: underline; text-underline-offset: 3px; }
+  .w-links svg {
+    width: 0.85rem;
+    height: 0.85rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    transition: transform 0.4s var(--w-ease);
+  }
+  .w-links a:hover svg { transform: translateX(3px); }
+
+  .w-toggle {
+    display: block;
+    margin: 0.75rem auto 0;
+    padding: 0.35rem 0.9rem;
+    border: 1px solid var(--w-line);
+    border-radius: 999px;
+    font: inherit;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--sl-color-text-accent);
+    background: transparent;
+    cursor: pointer;
+  }
+  .w-toggle[hidden] { display: none; }
+  .w-toggle:hover { background: color-mix(in srgb, var(--sl-color-accent) 8%, transparent); }
+  .w-toggle:focus-visible,
+  .w-links a:focus-visible { outline: 2px solid var(--sl-color-accent); outline-offset: 3px; }
+
+  /* Slow, gentle motion: the status LED breathes, and a traced net glows. */
+  .w-led-halo { animation: w-glow 4s ease-in-out infinite; }
+
+  @keyframes w-glow { 0%, 100% { opacity: 0.35; } 50% { opacity: 1; } }
+  @keyframes w-rise { from { opacity: 0; transform: translateY(4px); } }
+
+  @media (prefers-reduced-motion: reduce) {
+    .wd * { animation: none !important; transition: none !important; }
+  }
+</style>

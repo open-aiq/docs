@@ -15,7 +15,7 @@ Nothing installs until the owner approves it:
    `GET /device/ota`.
 5. It streams the image over HTTPS into the inactive slot, checking size and
    SHA-256 and reporting progress every 10%. Sampling and Bluetooth pause while
-   the screen shows `Updating NN%`.
+   the screen shows the progress over `Updating, keep power`.
 6. It switches slots, reports `installing`, and reboots.
 7. After its first successful upload, the new firmware marks itself good and
    reports `succeeded`.
