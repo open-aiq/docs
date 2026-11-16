@@ -36,6 +36,16 @@
   padding-inline: clamp(1.5rem, 5vw, 4rem);
 }
 
+/* Starlight's splash hero is sized for a full landing page (up to 10rem of
+   padding and a 6xl title), which pushes our short home page past one screen. */
+.hero { padding-block: clamp(1.5rem, 5vmin, 3rem); }
+.hero h1 { font-size: clamp(var(--sl-text-3xl), calc(0.25rem + 4vw), var(--sl-text-5xl)); }
+.hero .stack { gap: 1.25rem; }
+
+@media (min-width: 50rem) {
+  .hero { padding-block: clamp(2rem, 6vmin, 3.5rem); }
+}
+
 .card-grid .card {
   border-top: 3px solid color-mix(in srgb, var(--sl-color-accent) 75%, var(--oa-sage));
 }
