@@ -40,3 +40,18 @@
 .site-title { letter-spacing: -0.025em; }
 
 /* The soft sand page in light mode is set in tokens.css. */
+
+/* On wide screens Starlight gives half the spare width to the "On this page"
+   column, which leaves a blank band beside its links. Keep that column at its
+   normal width and centre a slightly wider text column in the rest. */
+@media (min-width: 72rem) {
+  .right-sidebar-container { width: var(--sl-sidebar-width); }
+  [data-has-sidebar][data-has-toc] .main-pane {
+    --sl-content-margin-inline: auto;
+    width: calc(100% - var(--sl-sidebar-width));
+  }
+}
+
+@media (min-width: 90rem) {
+  :root { --sl-content-width: 52rem; }
+}
