@@ -31,6 +31,9 @@
     radial-gradient(circle at 12% 20%, color-mix(in srgb, var(--sl-color-accent) 18%, transparent), transparent 34%),
     radial-gradient(circle at 88% 30%, color-mix(in srgb, var(--oa-sage) 14%, transparent), transparent 30%);
   border-radius: var(--oa-radius-card);
+  /* Starlight only pads the hero top and bottom, which leaves the text
+     touching the card's left edge. */
+  padding-inline: clamp(1.5rem, 5vw, 4rem);
 }
 
 .card-grid .card {
