@@ -51,18 +51,18 @@ Bluetooth prompt. Older iOS and Android use a normal scan.
 INFO                      -> is the monitor registered (DEVID, DEVKEY_SET)?
 DEVID:dev_...             -> only when registering (see Register a device)
 DEVKEY:sk_...
-SCAN                      -> nearby WiFi networks
+SCAN                      -> nearby Wi-Fi networks
 SSID:Your network
 PASS:Your password
 LAT:24.8607
 LON:67.0011
-SAVE                      -> persists and joins WiFi
+SAVE                      -> persists and joins Wi-Fi
 ```
 
 Setters only change memory until `SAVE`. Values may contain colons; secrets
 are never echoed. `SAVE` replies `SAVE_BEGIN`, `WIFI_CONNECTING`, then `SAVE_OK`
 and `IP:<ip>` or `SAVE_FAILED:WIFI` / `SAVE_FAILED:STORAGE`, then `SAVE_END`.
-If WiFi fails, don't worry: credentials are kept, so you only fix the network.
+If Wi-Fi fails, don't worry: credentials are kept, so you only fix the network.
 
 ## Command reference
 
@@ -75,7 +75,7 @@ If WiFi fails, don't worry: credentials are kept, so you only fix the network.
 | `LOAD` | `LOAD_BEGIN`<br />`SSID:`<br />`PASS_SET:0/1`<br />`LAT:`<br />`LON:`<br />`DEVID:`<br />`DEVKEY_SET:0/1`<br />`LOAD_END` |
 | `READ` | `READING:{json}`<br />`ERROR:NO_READING` before the first sample |
 | `LIVE:ON` / `LIVE:OFF` | `OK: live on/off`<br />While on, a `READING:{json}` line after every 20-second sample |
-| `OTA:CHECK` | `OK: ota check`; checks for an owner-approved firmware update now |
+| `OTA:CHECK` | `OK: ota check`, then one of:<br />`OTA:NONE`: nothing to install, or a new image is still being confirmed<br />`OTA:STARTING <ver>`<br />`OTA:FAILED`: Wi-Fi is down, or the check or install failed |
 | `CLEAR` | `CLEARED all stored config`; erases provisioning and BLE bonds |
 
 Live readings use the upload field names, with `null` for a missing sensor:
@@ -84,4 +84,7 @@ Live readings use the upload field names, with `null` for a missing sensor:
 {"pm1_0":3,"pm2_5":12,"pm10_0":18,"aqi":57,"temperature":24.5,"humidity":40.0,"heat_index":24.9,"uptime_ms":123456}
 ```
 
-Unknown commands echo back as `echo: <command>`. Errors start with `ERROR:`.
+Errors start with `ERROR:`. A line that isn't a command gets
+`ERROR:UNKNOWN_COMMAND`; the monitor never sends your text back, so a mistyped
+secret stays private. A latitude or longitude that isn't a real coordinate gets
+`ERROR:INVALID_LAT` or `ERROR:INVALID_LON` straight away.

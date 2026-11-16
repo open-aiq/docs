@@ -13,6 +13,8 @@ You'll need:
 - a Sensirion **SHT30** temperature and humidity sensor
 - a 128×64 I²C **OLED**, with either an SH1106 (default) or SSD1306 controller
 - two push buttons, a breadboard and some jumper wires
+- optional: an RGB status LED (WS2812). Every ESP32-S3-DevKitC-1 has one on
+  board
 
 Here's how it all connects. Pick the breadboard if you're wiring it by hand,
 or Proto2 if you have the carrier board.
@@ -41,6 +43,10 @@ or Proto2 if you have the carrier board.
   </tbody>
 </table>
 
+Don't skip SET. The firmware uses it to
+[rest the particle sensor](../particle-sensor/) between samples. Left
+unconnected, the sensor runs all the time and wears out sooner.
+
 This is the map for the Proto2 carrier board. If you wired a breadboard before
 it, yours probably uses SDA 8, SCL 9, sensor TX 18, sensor RX 17 and buttons 4
 (right) and 5 (left). Rewire it, or keep using firmware from before the change.
@@ -50,6 +56,8 @@ it, yours probably uses SDA 8, SCL 9, sensor TX 18, sensor RX 17 and buttons 4
   4.7 kΩ from SDA and from SCL to 3.3 V, like Proto2's R1 and R2.
 - **PMS5003:** it needs 5 V power, and its UART runs at 9600 baud with 3.3 V
   logic. Cable and adapter pin orders vary, so wire by the labels.
+- **Status LED:** the firmware sends the same signal to GPIO 48 and 38, so the
+  devkit's LED lights on either board revision. Leave both pins free.
 - **Buttons:** wire to ground; the chip's internal pull-ups do the rest.
 
 At boot, the firmware looks for the SHT30 at `0x44` or `0x45` and the OLED at
@@ -57,9 +65,10 @@ At boot, the firmware looks for the SHT30 at `0x44` or `0x45` and the OLED at
 The OLED controller can't be detected, so choose it at build time
 (`OLED_CONTROLLER=sh1106` or `ssd1306`) or grab the matching release image.
 
-`src/board.rs` in the device repository is the source of truth for pins. Stuck
-on wiring? Ask us in a
-[GitHub issue](https://github.com/open-aiq).
+`src/board.rs` in the device repository is the source of truth for pins. The
+board itself, with schematic, Gerbers and BOM, is in
+[open-aiq/hardware](https://github.com/open-aiq/hardware). Stuck on wiring?
+Ask us in a [GitHub issue](https://github.com/open-aiq/device/issues).
 
 ## Buttons
 
