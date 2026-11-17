@@ -9,15 +9,15 @@
       "name": "Web dashboard",
       "repo": "open-aiq/frontend",
       "links": [
-        { "label": "Open the dashboard", "url": "https://open-airiq.web.app" },
-        { "label": "Try the prototype", "url": "https://open-airiq.web.app/prototype/#web" }
+        { "label": "Open the dashboard", "url": "https://open.air-iq.net" },
+        { "label": "Try the prototype", "url": "https://open.air-iq.net/prototype/#web" }
       ]
     },
     "app": {
       "name": "Mobile app",
       "repo": "open-aiq/app",
       "links": [
-        { "label": "Try the prototype", "url": "https://open-airiq.web.app/prototype/#mobile" }
+        { "label": "Try the prototype", "url": "https://open.air-iq.net/prototype/#mobile" }
       ]
     },
     "firmware": {

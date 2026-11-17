@@ -5,7 +5,7 @@ description: Explore, run or build Open AIQ.
 
 ## Explore the product
 
-Visit [open-airiq.web.app](https://open-airiq.web.app) to browse the
+Visit [open.air-iq.net](https://open.air-iq.net) to browse the
 community map, or sign in to manage your monitors.
 
 ## Run the software locally

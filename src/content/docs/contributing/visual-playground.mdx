@@ -13,7 +13,7 @@ import WebReadings from "../../../components/playground/WebReadings.astro";
 
 This page is the visual spec for the mobile app and the web dashboard. When you change how a monitor looks in one place, check it here first, then match the other. Switch the site theme to see the dark values.
 
-Want to click around the real thing? The [**prototype**](https://open-airiq.web.app/prototype/) runs both the web dashboard and the mobile app with mock data, no sign-in needed. The switch at the top flips between them, and the **Screen** menu beside it jumps to any page or app screen.
+Want to click around the real thing? The [**prototype**](https://open.air-iq.net/prototype/) runs both the web dashboard and the mobile app with mock data, no sign-in needed. The switch at the top flips between them, and the **Screen** menu beside it jumps to any page or app screen.
 
 Flutter and React can't share components, so each platform builds its own. What they do share is the **design tokens**: one file of colors, radii, shadows, motion and AQI bands that generates every platform's theme.
 
@@ -116,7 +116,7 @@ Nothing else goes in the bar. Page actions, like a monitor's settings, belong on
 
 - **Mobile app:** `make gallery` in `app/` shows these components with mock data. No sign-in needed.
 - **Web dashboard:** `make review` in `frontend/`, then open the **Playground** link in the review panel.
-- **Both, hosted:** the [prototype](https://open-airiq.web.app/prototype/) is these two builds side by side, with a **Screen** menu for every page and app screen. `make deploy` in `frontend/` rebuilds it from both repositories, so the mobile app needs to sit next to `frontend/` with Flutter installed.
+- **Both, hosted:** the [prototype](https://open.air-iq.net/prototype/) is these two builds side by side, with a **Screen** menu for every page and app screen. `make deploy` in `frontend/` rebuilds it from both repositories, so the mobile app needs to sit next to `frontend/` with Flutter installed.
 
 <style>{`
   .pg-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr)); gap: 1.25rem; margin-block: 1.5rem; }
