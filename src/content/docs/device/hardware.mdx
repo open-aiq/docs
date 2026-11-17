@@ -12,7 +12,8 @@ You'll need:
 - a Plantower **PMS5003** particulate sensor
 - a Sensirion **SHT30** temperature and humidity sensor
 - a 128×64 I²C **OLED**, with either an SH1106 (default) or SSD1306 controller
-- two push buttons, a breadboard and some jumper wires
+- two push buttons (Proto2 has a third, for pairing), a breadboard and some
+  jumper wires
 - optional: an RGB status LED (WS2812). Every ESP32-S3-DevKitC-1 has one on
   board
 
@@ -45,7 +46,10 @@ or Proto2 if you have the carrier board.
 
 Don't skip SET. The firmware uses it to
 [rest the particle sensor](../particle-sensor/) between samples. Left
-unconnected, the sensor runs all the time and wears out sooner.
+unconnected, the sensor runs all the time and wears out sooner. RESET is
+worth wiring too: if the sensor stops sending readings, the firmware pulses
+it low to restart it. Without it, a stuck sensor stays stuck until you power
+the monitor off and on.
 
 This is the map for the Proto2 carrier board. If you wired a breadboard before
 it, yours probably uses SDA 8, SCL 9, sensor TX 18, sensor RX 17 and buttons 4
@@ -72,10 +76,16 @@ Ask us in a [GitHub issue](https://github.com/open-aiq/device/issues).
 
 ## Buttons
 
-| Action | Effect |
+There are three: right, left and pair.
+
+| Press | What happens |
 | --- | --- |
-| Left / Right | Cycle screens:<br />AQI<br />Readings<br />Network |
-| Hold both for 3 s | Start Bluetooth pairing mode for 5 minutes |
+| Right | Next screen: AQI, Readings, Network |
+| Left | Previous screen |
+| Hold pair for 3 s | Opens Bluetooth pairing for 5 minutes. Holding it again restarts the 5 minutes |
+
+No pair button? A breadboard build has only two, so hold left and right
+together for 3 s instead. It does the same thing on every board.
 
 ## Flash layout
 

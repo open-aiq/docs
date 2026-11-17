@@ -33,10 +33,10 @@ export const pinTable: { part: string; signal: string; net: NetId; note?: string
   { part: 'PMS5003', signal: 'sensor TX → ESP RX', net: 'rx' },
   { part: 'PMS5003', signal: 'sensor RX ← ESP TX', net: 'tx' },
   { part: 'PMS5003', signal: 'SET (high runs, low rests)', net: 'set' },
-  { part: 'PMS5003', signal: 'RESET', net: 'reset', note: 'optional, not driven yet' },
+  { part: 'PMS5003', signal: 'RESET (low restarts the sensor)', net: 'reset' },
   { part: 'Right button', signal: 'active-low', net: 'right' },
   { part: 'Left button', signal: 'active-low', net: 'left' },
-  { part: 'Pair button', signal: 'active-low', net: 'pair', note: 'Proto2 only, not read yet' },
+  { part: 'Pair button', signal: 'active-low', net: 'pair', note: 'Proto2' },
 ]
 
 export const gpioLabel = (net: NetId) => (/^\d+$/.test(netPin[net]) ? `GPIO ${netPin[net]}` : netPin[net])
@@ -124,15 +124,14 @@ export const cards: Card[] = [
     id: 'reset',
     title: 'Sensor RESET',
     tech: gpioLabel('reset'),
-    body: 'The firmware doesn’t drive it yet, so the breadboard build leaves it unconnected. Proto2 holds it high with R4.',
-    chips: ['optional'],
+    body: 'The firmware holds it high, and pulses it low to restart the sensor if a whole burst brings no readings. Proto2 adds R4 to hold it high while the devkit boots.',
   },
   {
     id: 'right',
     title: 'Right button',
     tech: gpioLabel('right'),
     body: 'Cycles the screens. Wire it to ground: the chip’s internal pull-up keeps the pin high until you press.',
-    hint: 'Hold both buttons for 3 s to start Bluetooth pairing.',
+    hint: 'Hold the pair button, or left and right together, for 3 s to start Bluetooth pairing.',
     links: [{ href: '/device/ble/', label: 'BLE provisioning' }],
   },
   {
@@ -140,14 +139,15 @@ export const cards: Card[] = [
     title: 'Left button',
     tech: gpioLabel('left'),
     body: 'Cycles the screens the other way. Like the right button, it connects the pin to ground when pressed.',
-    hint: 'Hold both buttons for 3 s to start Bluetooth pairing.',
+    hint: 'Hold the pair button, or left and right together, for 3 s to start Bluetooth pairing.',
     links: [{ href: '/device/ble/', label: 'BLE provisioning' }],
   },
   {
     id: 'pair',
     title: 'Pair button',
     tech: gpioLabel('pair'),
-    body: 'Only on Proto2. It’s for starting pairing later; the firmware doesn’t read it yet, so hold left and right for 3 s instead.',
+    body: 'Hold it for 3 s to start Bluetooth pairing. It’s only on Proto2; on a breadboard, hold left and right together instead.',
+    links: [{ href: '/device/ble/', label: 'BLE provisioning' }],
     layouts: ['proto2'],
   },
   {

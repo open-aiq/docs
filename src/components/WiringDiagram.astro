@@ -123,6 +123,7 @@ const bbNets: Net[] = [
   },
   { id: 'v5', segs: [curve(`M${pms.v5},${pms.y} C${pms.v5},330 ${xp('v5')},330 ${xp('v5')},${row(11)}`, [pms.v5, pms.y], [xp('v5'), row(11)])] },
   { id: 'set', segs: [line(pms.set, pms.y, xp('set'), row(11))] },
+  { id: 'reset', segs: [line(pms.reset, pms.y, xp('reset'), row(11))] },
   { id: 'tx', segs: [line(pms.tx, pms.y, xp('tx'), row(11))] },
   { id: 'rx', segs: [line(pms.rx, pms.y, xp('rx'), row(11))] },
   ...bbButtons.map((b): Net => ({ id: b.id, segs: [line(b.sig, row(7), b.sig, row(10))] })),
@@ -149,6 +150,7 @@ const dNets: Net[] = [
   bus('v3', X('3V3'), [[oled.v3, oled.y]]),
   { id: 'v5', segs: [ortho([[pms.v5, pms.y], [pms.v5, 300], [xp('v5'), 300], [xp('v5'), TOP]], 10)] },
   { id: 'set', segs: [line(pms.set, pms.y, xp('set'), TOP)] },
+  { id: 'reset', segs: [line(pms.reset, pms.y, xp('reset'), TOP)] },
   { id: 'tx', segs: [line(pms.tx, pms.y, xp('tx'), TOP)] },
   { id: 'rx', segs: [line(pms.rx, pms.y, xp('rx'), TOP)] },
   ...bbButtons.map((b): Net => ({ id: b.id, segs: [line(b.sig, legY, b.sig, TOP)] })),
@@ -223,7 +225,7 @@ const touches: Record<Layout, Partial<Record<NetId, string[]>>> = {
   breadboard: {
     v5: ['devkit', 'pms'], v3: ['devkit', 'oled', 'sht'], gnd: ['devkit', 'pms', 'oled', 'sht', 'left', 'right'],
     sda: ['devkit', 'oled', 'sht'], scl: ['devkit', 'oled', 'sht'],
-    tx: ['devkit', 'pms'], rx: ['devkit', 'pms'], set: ['devkit', 'pms'],
+    tx: ['devkit', 'pms'], rx: ['devkit', 'pms'], set: ['devkit', 'pms'], reset: ['devkit', 'pms'],
     left: ['devkit'], right: ['devkit'],
   },
   proto2: {

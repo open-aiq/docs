@@ -16,7 +16,7 @@ Each [firmware release](../../releases/) has two images per OLED controller:
 | `airmonitor-<version>-<oled>-ota.bin` | App image only, used for over-the-air updates |
 
 ```bash
-espflash write-bin 0x0 airmonitor-v0.4.0-sh1106-full.bin
+espflash write-bin 0x0 airmonitor-v0.4.2-sh1106-full.bin
 ```
 
 Check it against `SHA256SUMS` first. You only flash over USB once; after that,
@@ -52,7 +52,7 @@ buttons:
 
 | Line | Same as |
 | --- | --- |
-| `BTN:PAIR` | Holding both buttons for 3 s |
+| `BTN:PAIR` | Holding the pair button, or left and right together, for 3 s |
 | `BTN:LEFT` / `BTN:RIGHT` | Left / right button |
 | `BTN:HELP` | Lists these commands |
 
