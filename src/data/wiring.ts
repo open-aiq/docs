@@ -56,7 +56,7 @@ export const cards: Card[] = [
   {
     id: 'overview-breadboard',
     title: 'Breadboard build',
-    body: 'The devkit is too wide for one breadboard, so it spans two, across the rails between them. We cut the rails off the bottom of the first board and move them to the top, for the I²C bus. Jumper wires run to each part, in the usual colours. Turn off the breadboard to see the same wiring point to point.',
+    body: 'The devkit is too wide for one breadboard, so it spans two, across the rails between them. We cut the rails off the top of the lower board and move them to its bottom edge, for the I²C bus. Jumper wires run to each part, in the usual colours. Turn off the breadboard to see the same wiring point to point.',
     hint: 'Tap any wire or part to trace it.',
     layouts: ['breadboard'],
   },
@@ -84,13 +84,13 @@ export const cards: Card[] = [
     id: 'gnd',
     title: 'Ground',
     tech: 'GND',
-    body: 'Every part shares one ground. On the breadboard, one wire takes the devkit’s GND pin up to the first board’s − rail, and everything else joins it there.',
+    body: 'Every part shares one ground. On the breadboard, one wire takes the devkit’s GND pin down to the lower board’s − rail, and everything else joins it there.',
   },
   {
     id: 'sda',
     title: 'I²C data',
     tech: gpioLabel('sda'),
-    body: 'The OLED and SHT30 share this line. On the breadboard it has its own rail in the top strip, with one wire down to the devkit. The bus runs at 400 kHz and needs pull-ups: most breakouts have them already, and if yours don’t, add 4.7 kΩ to 3.3 V.',
+    body: 'The OLED and SHT30 share this line. On the breadboard it has its own rail in the bottom strip, with one wire up to the devkit. The bus runs at 400 kHz and needs pull-ups: most breakouts have them already, and if yours don’t, add 4.7 kΩ to 3.3 V.',
     chips: ['SDA', '400 kHz'],
   },
   {
@@ -181,7 +181,7 @@ export const cards: Card[] = [
   {
     id: 'breadboard',
     title: 'Breadboard',
-    body: 'Two boards, because the devkit’s headers are 25.4 mm apart. It spans the seam, leaving four free holes above each signal pin. Holes in a short column of five are joined, so a wire there connects to that pin. The first board’s bottom rails would sit under the devkit, so cut them off (a sharp knife through the backing works) and stick them along the top. That strip carries SCL and SDA; the long rails below it carry 3.3 V (+) and ground (−).',
+    body: 'Two boards, because the devkit’s headers are 25.4 mm apart. It spans the seam, leaving four free holes below each signal pin. Holes in a short column of five are joined, so a wire there connects to that pin. The lower board’s top rails would sit under the devkit, so cut them off (a sharp knife through the backing works) and stick them along its bottom edge. That strip carries SCL and SDA; the long rails above it carry 3.3 V (+) and ground (−).',
     layouts: ['breadboard'],
   },
   {
