@@ -61,7 +61,8 @@
           { "version": "0.4.3", "info": "Proto2 rev E" },
           { "version": "0.4.4", "info": "Proto2 rev F" },
           { "version": "0.4.5", "info": "Proto2 rev G" },
-          { "version": "0.4.6", "info": "Proto2 rev H" }
+          { "version": "0.4.6", "info": "Proto2 rev H" },
+          { "version": "0.4.7", "info": "Proto2 rev H" }
         ]
       }
     },
