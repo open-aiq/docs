@@ -34,7 +34,7 @@
       "line": "0.4",
       "status": "current",
       "components": { "backend": "0.4", "frontend": "0.4", "app": "0.4", "firmware": "0.4", "hardware": "0.4" },
-      "notes": "Device logs, owner-approved OTA firmware updates, mobile app sign-in, secure BLE pairing, local-time history charts, the Sand & Sage look with a hosted prototype, and the Proto2 board, now at rev G with a working pair button.",
+      "notes": "Device logs, owner-approved OTA firmware updates, mobile app sign-in, secure BLE pairing, local-time history charts, the Sand & Sage look with a hosted prototype, and the Proto2 board, now at rev H, built for home etching with a friendlier silkscreen.",
       "releases": {
         "backend": [
           { "version": "0.4.0", "info": "Logs, OTA" },
@@ -60,7 +60,8 @@
           { "version": "0.4.2", "info": "Proto2 rev D" },
           { "version": "0.4.3", "info": "Proto2 rev E" },
           { "version": "0.4.4", "info": "Proto2 rev F" },
-          { "version": "0.4.5", "info": "Proto2 rev G" }
+          { "version": "0.4.5", "info": "Proto2 rev G" },
+          { "version": "0.4.6", "info": "Proto2 rev H" }
         ]
       }
     },
