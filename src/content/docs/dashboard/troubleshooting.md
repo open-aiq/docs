@@ -42,7 +42,7 @@ Notifications arrive in chunks of up to `MTU - 3` bytes (20 at the default MTU).
 
 ## The app cannot find or pair with the monitor
 
-- It advertises only in pairing mode. Hold both buttons for 3 seconds (or send
+- It advertises only in pairing mode. Hold the pair button for 3 seconds (or send
   `BTN:PAIR` on the serial console) until the screen shows `PAIRING`. The
   window closes after 5 minutes; start it again anytime.
 - Use the 6-digit code on screen now; each pairing session gets a new one.

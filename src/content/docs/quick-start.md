@@ -29,11 +29,11 @@ All three need the same Clerk instance. Add the deployed dashboard's origin
 ## Bring up a monitor
 
 1. Build the [reference hardware](../device/hardware/): an ESP32-S3 board,
-   PMS5003, SHT30, a 128×64 OLED, and two buttons.
+   PMS5003, SHT30, a 128×64 OLED, and three buttons.
 2. Flash it once over USB with the `-full.bin` image from the latest
    [firmware release](../releases/), or build [from source](../device/firmware/)
    with `make flash`.
-3. In the mobile app, choose **Add monitor**, hold both buttons for 3 seconds,
+3. In the mobile app, choose **Add monitor**, hold the pair button for 3 seconds,
    and enter the 6-digit code on the screen. The app registers it, sends your
    Wi-Fi and location, and waits for the first reading.
 

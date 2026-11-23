@@ -12,8 +12,8 @@ You'll need:
 - a Plantower **PMS5003** particulate sensor
 - a Sensirion **SHT30** temperature and humidity sensor
 - a 128×64 I²C **OLED**, with either an SH1106 (default) or SSD1306 controller
-- two push buttons (Proto2 has a third, for pairing), a breadboard and some
-  jumper wires
+- three push buttons (left, right and pair), a breadboard and some jumper
+  wires
 - optional: an RGB status LED (WS2812). Every ESP32-S3-DevKitC-1 has one on
   board
 
@@ -84,8 +84,9 @@ There are three: right, left and pair.
 | Left | Previous screen |
 | Hold pair for 3 s | Opens Bluetooth pairing for 5 minutes. Holding it again restarts the 5 minutes |
 
-No pair button? A breadboard build has only two, so hold left and right
-together for 3 s instead. It does the same thing on every board.
+On a breadboard, wire the pair button from GPIO 7 to ground, like the other
+two. Without one, you can still open pairing by typing `BTN:PAIR` in the
+[serial console](../firmware/#serial-console).
 
 ## Flash layout
 
