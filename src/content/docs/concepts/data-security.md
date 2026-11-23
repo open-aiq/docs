@@ -26,7 +26,7 @@ displays it.
 - **Device to backend.** HTTPS, verified against ESP-IDF's built-in CA bundle.
 - **Phone to device.** Bluetooth LE Secure Connections with passkey entry, so
   every command needs an encrypted, authenticated link. Bluetooth stays off
-  until the owner holds both buttons, and each pairing window gets a new random
+  until the owner holds the pair button, and each pairing window gets a new random
   6-digit passkey shown only on the monitor. See
   [BLE provisioning](../../device/ble/).
 - **Firmware updates.** Images download over HTTPS and must match the published

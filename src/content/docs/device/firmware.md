@@ -52,7 +52,7 @@ buttons:
 
 | Line | Same as |
 | --- | --- |
-| `BTN:PAIR` | Holding the pair button, or left and right together, for 3 s |
+| `BTN:PAIR` | Holding the pair button for 3 s |
 | `BTN:LEFT` / `BTN:RIGHT` | Left / right button |
 | `BTN:HELP` | Lists these commands |
 

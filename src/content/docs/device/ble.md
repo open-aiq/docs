@@ -13,8 +13,8 @@ earlier Arduino firmware, which had no pairing security.
 
 ## Pairing mode
 
-BLE is off by default. Hold the pair button for 3 s (or left and right
-together, or send `BTN:PAIR` over serial) and the monitor advertises as
+BLE is off by default. Hold the pair button for 3 s (or send `BTN:PAIR`
+over serial) and the monitor advertises as
 `AirMonitor-XXXX` for 5 minutes, with `PAIRING` on screen.
 
 RX and TX need an encrypted, MITM-authenticated link (LE Secure Connections,

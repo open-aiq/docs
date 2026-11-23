@@ -8,6 +8,7 @@
 //   public/favicon.svg              the docs favicon (follows light and dark)
 //   public/brand/open-aiq-512.png   the GitHub organization avatar
 //   ../frontend/public/favicon.svg  the dashboard favicon
+//   ../frontend/public/social.png   the dashboard's link preview card (1200 × 630)
 //   ../app/...                      Android, iOS and web launcher icons
 //
 // Outputs in sibling repositories are written only when that repository is
@@ -145,4 +146,28 @@ for (const { path, size, source, repo } of PNGS) {
   mkdirSync(dirname(resolve(path)), { recursive: true });
   await image.png({ compressionLevel: 9 }).toFile(resolve(path));
   console.log(`Wrote ${path} (${size} × ${size})`);
+}
+
+// The link preview card: the tile beside the name, on the page background.
+// Text uses the system sans-serif, so the PNG can differ slightly by machine.
+const SOCIAL = { path: "../frontend/public/social.png", repo: "../frontend" };
+if (available(SOCIAL.repo)) {
+  const page = tokens.color.light.surface;
+  const font = "Helvetica Neue, Helvetica, Arial, sans-serif";
+  const card = svg(
+    "0 0 1200 630",
+    `<rect width="1200" height="630" fill="${page}"/>` +
+      `<rect x="0" y="606" width="1200" height="24" fill="${light.sage}"/>` +
+      `<g transform="translate(120 195) scale(3.75)">` +
+      tile(light).replace(/^<svg[^>]*>/, "").replace(/<\/svg>\n$/, "") +
+      `</g>` +
+      `<text x="390" y="300" font-family="${font}" font-size="96" font-weight="700" fill="${light.ink}">Open AIQ</text>` +
+      `<text x="392" y="370" font-family="${font}" font-size="40" fill="${light.accent}">Community air quality, live and open source</text>`,
+  );
+  await sharp(Buffer.from(card), { density: 144 })
+    .resize(1200, 630)
+    .flatten({ background: page })
+    .png({ compressionLevel: 9 })
+    .toFile(resolve(SOCIAL.path));
+  console.log(`Wrote ${SOCIAL.path} (1200 × 630)`);
 }
