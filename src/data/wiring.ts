@@ -4,7 +4,7 @@
 
 export type Layout = 'breadboard' | 'proto2'
 
-export type NetId = 'v5' | 'v3' | 'gnd' | 'sda' | 'scl' | 'tx' | 'rx' | 'set' | 'reset' | 'left' | 'right' | 'pair'
+export type NetId = 'v5' | 'v3' | 'gnd' | 'sda' | 'scl' | 'tx' | 'rx' | 'left' | 'right' | 'pair'
 
 // ESP32-S3-DevKitC-1 headers, pin 1 (by the antenna) first.
 export const leftHeader = ['3V3', '3V3', 'RST', '4', '5', '6', '7', '15', '16', '17', '18', '8', '3', '46', '9', '10', '11', '12', '13', '14', '5V', 'GND']
@@ -20,8 +20,6 @@ export const netPin: Record<NetId, string> = {
   scl: '4',
   tx: '18',
   rx: '17',
-  set: '8',
-  reset: '16',
   right: '15',
   left: '6',
   pair: '7',
@@ -32,8 +30,6 @@ export const pinTable: { part: string; signal: string; net: NetId; note?: string
   { part: 'OLED + SHT30', signal: 'SCL', net: 'scl' },
   { part: 'PMS5003', signal: 'sensor TX → ESP RX', net: 'rx' },
   { part: 'PMS5003', signal: 'sensor RX ← ESP TX', net: 'tx' },
-  { part: 'PMS5003', signal: 'SET (high runs, low rests)', net: 'set' },
-  { part: 'PMS5003', signal: 'RESET (low restarts the sensor)', net: 'reset' },
   { part: 'Right button', signal: 'active-low', net: 'right' },
   { part: 'Left button', signal: 'active-low', net: 'left' },
   { part: 'Pair button', signal: 'active-low', net: 'pair', note: 'Proto2' },
@@ -115,18 +111,6 @@ export const cards: Card[] = [
     chips: ['UART', '9600 baud'],
   },
   {
-    id: 'set',
-    title: 'Sensor SET',
-    tech: gpioLabel('set'),
-    body: 'High keeps the PMS5003 running. The firmware pulls it low to rest the sensor between readings.',
-  },
-  {
-    id: 'reset',
-    title: 'Sensor RESET',
-    tech: gpioLabel('reset'),
-    body: 'The firmware holds it high, and pulses it low to restart the sensor if a whole burst brings no readings. Proto2 adds R4 to hold it high while the devkit boots.',
-  },
-  {
     id: 'right',
     title: 'Right button',
     tech: gpioLabel('right'),
@@ -161,7 +145,7 @@ export const cards: Card[] = [
     id: 'pms',
     title: 'PMS5003',
     tech: 'particle sensor',
-    body: 'Counts particles with a small fan and a laser. It runs on 5 V, but its data pins use 3.3 V logic, so they connect straight to the devkit. Cable and adapter pin orders vary, so match the labels.',
+    body: 'Counts particles with a small fan and a laser. It runs on 5 V, but its data pins use 3.3 V logic, so they connect straight to the devkit. It plugs in on a 4-wire cable (TX RX VCC GND) and sleeps and wakes by UART command, so SET and RESET stay unconnected. Cable pin orders vary, so match the labels.',
     links: [{ href: '/device/particle-sensor/', label: 'Particle sensor' }],
   },
   {
@@ -187,7 +171,7 @@ export const cards: Card[] = [
   {
     id: 'proto2',
     title: 'Proto2 board',
-    tech: 'rev C',
+    tech: 'rev I',
     body: 'Single-sided and all through-hole, so you can solder it by hand. The traces here are simplified; the board files have the real routing.',
     links: [{ href: 'https://github.com/open-aiq/hardware/tree/main/pcb/proto2', label: 'Proto2 files' }],
     layouts: ['proto2'],
@@ -197,13 +181,6 @@ export const cards: Card[] = [
     title: 'R1, R2',
     tech: '4.7 kΩ',
     body: 'I²C pull-ups from SDA and SCL to 3.3 V. They’re built in, so your breakouts don’t need their own.',
-    layouts: ['proto2'],
-  },
-  {
-    id: 'pullups-pms',
-    title: 'R3, R4',
-    tech: '10 kΩ',
-    body: 'Hold SET and RESET high, so the PMS5003 stays awake and out of reset while the devkit boots.',
     layouts: ['proto2'],
   },
   {
