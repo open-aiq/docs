@@ -42,7 +42,7 @@ The revision is printed on the top, under the buttons (`REV I`).
 | Size | 145.5 × 68 mm, 1.6 mm thick |
 | Copper | One layer, on the bottom. Holes aren't plated |
 | Particle sensor | PMS5003 on its 4-wire cable (`TX RX VCC GND`) |
-| Firmware | Needs the release after v0.4.3, which rests the sensor by UART command |
+| Firmware | [v0.4.4](https://github.com/open-aiq/device/releases/tag/v0.4.4) or newer, which rests the sensor by UART command |
 
 Rev I is our first board made for local fabrication. Its capacitors lie flat
 between the devkit sockets, and the QR code you scanned replaced the copper
@@ -50,7 +50,8 @@ lettering that used to sit there.
 
 On firmware v0.4.3 or older, Rev I still works, but the sensor never rests:
 older firmware sleeps it through the SET pin, which the 4-wire cable doesn't
-connect. Update the firmware when the next release is out.
+connect. Update to v0.4.4 or newer; monitors that are already set up get it
+[over the air](../device/ota/).
 
 ### Earlier revisions
 

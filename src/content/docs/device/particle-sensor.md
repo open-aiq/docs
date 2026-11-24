@@ -20,7 +20,7 @@ with its checksum and page numbers.
 | --- | --- |
 | How often it reports | Every 2.3 s when the air is steady; every 200–800 ms when it changes fast |
 | Warm-up | Readings are stable "at least 30 seconds after the sensor wakeup" |
-| Sleep | Pulling its SET pin low stops the fan and laser |
+| Sleep | A UART sleep command (or pulling its SET pin low) stops the fan and laser; a wake command starts them again |
 | Power | 100 mA running, 200 µA asleep |
 | Expected life | MTTF (mean time to failure) of 3 years, with no test conditions given |
 | Sensor-to-sensor spread | ±10 µg/m³ up to 100 µg/m³, ±10 % above that |

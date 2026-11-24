@@ -34,11 +34,12 @@
       "line": "0.4",
       "status": "current",
       "components": { "backend": "0.4", "frontend": "0.4", "app": "0.4", "firmware": "0.4", "hardware": "0.4" },
-      "notes": "Device logs, owner-approved OTA firmware updates, mobile app sign-in, secure BLE pairing, local-time history charts, the Sand & Sage look with a hosted prototype, and the Proto2 board, now at rev H, built for home etching with a friendlier silkscreen.",
+      "notes": "Device logs, owner-approved OTA firmware updates, mobile app sign-in, secure BLE pairing, local-time history charts, the Sand & Sage look with a hosted prototype, and the Proto2 board, now at rev I: single-sided with unplated holes, flat capacitors and a QR code to its own page.",
       "releases": {
         "backend": [
           { "version": "0.4.0", "info": "Logs, OTA" },
-          { "version": "0.4.1", "info": "App-only keys" }
+          { "version": "0.4.1", "info": "App-only keys" },
+          { "version": "0.4.2", "info": "Delete account" }
         ],
         "frontend": [
           { "version": "0.4.0", "info": "Local time" },
@@ -48,11 +49,13 @@
         "firmware": [
           { "version": "0.4.0", "info": "Proto2 pins" },
           { "version": "0.4.1", "info": "LED, screens" },
-          { "version": "0.4.2", "info": "Pair button" }
+          { "version": "0.4.2", "info": "Pair button" },
+          { "version": "0.4.4", "info": "PMS UART sleep" }
         ],
         "app": [
           { "version": "0.4.1", "info": "First release" },
-          { "version": "0.4.2", "info": "Sand & Sage" }
+          { "version": "0.4.2", "info": "Sand & Sage" },
+          { "version": "0.4.4", "info": "Pair copy" }
         ],
         "hardware": [
           { "version": "0.4.0", "info": "Proto2 rev B" },

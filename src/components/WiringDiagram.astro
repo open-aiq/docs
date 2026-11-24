@@ -40,7 +40,7 @@ const ortho = (pts: Pt[], r = 6): Seg => {
 
 const tone: Record<NetId, string> = {
   v5: 'v5', v3: 'v3', gnd: 'gnd', sda: 'sda', scl: 'scl', tx: 'tx', rx: 'rx',
-  set: 'ctl', reset: 'ctl', left: 'btn', right: 'btn', pair: 'btn',
+  left: 'btn', right: 'btn', pair: 'btn',
 }
 
 // ---------- Breadboard ----------
@@ -84,8 +84,8 @@ const rail = { scl: row(-3), sda: row(-2), v3: row(0), gnd: row(1) }
 const UP = 48
 const OLED_DX = -96
 const oled = { y: 212 - UP, gnd: 136, v3: 152, scl: 168, sda: 184 }
-const pms = { y: 212 - UP, reset: 344, rx: 360, tx: 376, set: 392, gnd: 408, v5: 424 }
-const pmsLabels: [number, string][] = [[pms.reset, 'RST'], [pms.rx, 'TX'], [pms.tx, 'RX'], [pms.set, 'SET'], [pms.gnd, 'GND'], [pms.v5, 'VCC']]
+const pms = { y: 212 - UP, rx: 360, tx: 376, gnd: 408, v5: 424 }
+const pmsLabels: [number, string][] = [[pms.rx, 'TX'], [pms.tx, 'RX'], [pms.gnd, 'GND'], [pms.v5, 'VCC']]
 const sht = { x: -12, v3: 384, gnd: 400, scl: 416, sda: 432 }
 // Where each SHT30 wire meets its rail, left to right so the wires nest.
 const shtAt = { v3: 56, gnd: 72, scl: 88, sda: 120 }
@@ -122,8 +122,6 @@ const bbNets: Net[] = [
     segs: [line(oled.v3, oled.y, oled.v3, rail.v3), line(X('3V3'), row(10), X('3V3'), rail.v3), shtWire('v3')],
   },
   { id: 'v5', segs: [curve(`M${pms.v5},${pms.y} C${pms.v5},330 ${xp('v5')},330 ${xp('v5')},${row(11)}`, [pms.v5, pms.y], [xp('v5'), row(11)])] },
-  { id: 'set', segs: [line(pms.set, pms.y, xp('set'), row(11))] },
-  { id: 'reset', segs: [line(pms.reset, pms.y, xp('reset'), row(11))] },
   { id: 'tx', segs: [line(pms.tx, pms.y, xp('tx'), row(11))] },
   { id: 'rx', segs: [line(pms.rx, pms.y, xp('rx'), row(11))] },
   ...bbButtons.map((b): Net => ({ id: b.id, segs: [line(b.sig, row(7), b.sig, row(10))] })),
@@ -149,8 +147,6 @@ const dNets: Net[] = [
   bus('gnd', X('GND'), [[oled.gnd, oled.y], [pms.gnd, pms.y], ...bbButtons.map((b): Pt => [b.gnd, legY])]),
   bus('v3', X('3V3'), [[oled.v3, oled.y]]),
   { id: 'v5', segs: [ortho([[pms.v5, pms.y], [pms.v5, 300], [xp('v5'), 300], [xp('v5'), TOP]], 10)] },
-  { id: 'set', segs: [line(pms.set, pms.y, xp('set'), TOP)] },
-  { id: 'reset', segs: [line(pms.reset, pms.y, xp('reset'), TOP)] },
   { id: 'tx', segs: [line(pms.tx, pms.y, xp('tx'), TOP)] },
   { id: 'rx', segs: [line(pms.rx, pms.y, xp('rx'), TOP)] },
   ...bbButtons.map((b): Net => ({ id: b.id, segs: [line(b.sig, legY, b.sig, TOP)] })),
@@ -173,7 +169,9 @@ const blades = [0, 1, 2, 3, 4, 5, 6].map((i) => {
 const LX = 693
 const py = (name: string) => f(50 + leftHeader.indexOf(name) * 15.7)
 const pn = (net: NetId) => py(netPin[net])
-const j1 = (pin: number) => f(233 - (pin - 1) * 8.2) // J1 pin 1 (VCC) is at the bottom
+// J1's four pins, bottom to top: VCC, GND, then the sensor's RX and TX.
+// (The board reads TX RX VCC GND; slots keep the traces from crossing.)
+const j1 = (slot: number) => f(233 - (slot - 1) * 8.2)
 const hop = (y1: number, y2: number): Seg => curve(`M658,${y1} C676,${y1} 676,${y2} ${LX},${y2}`, [658, y1], [LX, y2])
 const j2 = { y: 52, gnd: 174, v3: 190, scl: 206, sda: 222 }
 const j3 = { y: 378, v3: 350, gnd: 366, scl: 382, sda: 398 }
@@ -201,10 +199,8 @@ const p2Nets: Net[] = [
     ],
   },
   { id: 'v5', segs: [ortho([[658, j1(1)], [676, j1(1)], [676, pn('v5')], [LX, pn('v5')]])] },
-  { id: 'reset', segs: [hop(j1(6), pn('reset'))] },
   { id: 'rx', segs: [hop(j1(5), pn('rx'))] },
   { id: 'tx', segs: [hop(j1(4), pn('tx'))] },
-  { id: 'set', segs: [hop(j1(3), pn('set'))] },
   ...buttons.map((b, i): Net => ({
     id: b.id,
     segs: [ortho([[b.x + 13, 289], [b.x + 13, 266 + i * 8], [336 + i * 10, 266 + i * 8], [336 + i * 10, pn(b.id)], [LX, pn(b.id)]])],
@@ -225,14 +221,14 @@ const touches: Record<Layout, Partial<Record<NetId, string[]>>> = {
   breadboard: {
     v5: ['devkit', 'pms'], v3: ['devkit', 'oled', 'sht'], gnd: ['devkit', 'pms', 'oled', 'sht', 'left', 'right'],
     sda: ['devkit', 'oled', 'sht'], scl: ['devkit', 'oled', 'sht'],
-    tx: ['devkit', 'pms'], rx: ['devkit', 'pms'], set: ['devkit', 'pms'], reset: ['devkit', 'pms'],
+    tx: ['devkit', 'pms'], rx: ['devkit', 'pms'],
     left: ['devkit'], right: ['devkit'],
   },
   proto2: {
-    v5: ['devkit', 'pms', 'caps'], v3: ['devkit', 'oled', 'sht', 'pullups-i2c', 'pullups-pms', 'caps'],
+    v5: ['devkit', 'pms', 'caps'], v3: ['devkit', 'oled', 'sht', 'pullups-i2c', 'caps'],
     gnd: ['devkit', 'pms', 'oled', 'sht', 'left', 'right', 'pair', 'caps'],
     sda: ['devkit', 'oled', 'sht', 'pullups-i2c'], scl: ['devkit', 'oled', 'sht', 'pullups-i2c'],
-    tx: ['devkit', 'pms'], rx: ['devkit', 'pms'], set: ['devkit', 'pms', 'pullups-pms'], reset: ['devkit', 'pms', 'pullups-pms'],
+    tx: ['devkit', 'pms'], rx: ['devkit', 'pms'],
     left: ['devkit'], right: ['devkit'], pair: ['devkit'],
   },
 }
@@ -266,8 +262,6 @@ const resistor = (x1: number, y1: number, x2: number, y2: number) => {
 }
 const r1 = resistor(468, 349, 528, 349)
 const r2 = resistor(468, 370, 528, 370)
-const r3 = resistor(652, 46, 652, 86)
-const r4 = resistor(670, 46, 670, 86)
 const layoutCards = (c: Card) => (c.layouts ?? ['breadboard', 'proto2']).join(' ')
 ---
 
@@ -457,8 +451,8 @@ const layoutCards = (c: Card) => (c.layouts ?? ['breadboard', 'proto2']).join(' 
         <rect class="w-silk" x="321" y="40" width="309" height="236" rx="8" />
         <circle class="w-ghost" cx="420" cy="158" r="54" />
         <rect class="w-ghost" x="500" y="96" width="96" height="124" rx="10" />
-        <rect class="w-header" x="652" y="170" width="13" height="70" rx="3" />
-        {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => <rect class="w-pad" x="655" y={j1(n) - 2.6} width="6" height="5.2" rx="1" />)}
+        <rect class="w-header" x="652" y="193" width="13" height="47" rx="3" />
+        {[1, 2, 4, 5].map((n) => <rect class="w-pad" x="655" y={j1(n) - 2.6} width="6" height="5.2" rx="1" />)}
       </g>
 
       <!-- SHT30 sockets -->
@@ -509,15 +503,6 @@ const layoutCards = (c: Card) => (c.layouts ?? ['breadboard', 'proto2']).join(' 
       }
 
       <!-- Passives -->
-      <g {...hit('proto2', 'pullups-pms', { part: true })}>
-        {[r3, r4].map((r) => (
-          <g>
-            <path class="w-lead" d={r.lead} />
-            <rect class="w-res" x={r.body.x} y={r.body.y} width={r.body.w} height={r.body.h} rx="4" />
-            <path class="w-band" d={`M${r.cx - 4.5},${r.cy - 6} h9 M${r.cx - 4.5},${r.cy} h9`} />
-          </g>
-        ))}
-      </g>
       <g {...hit('proto2', 'pullups-i2c', { part: true })}>
         {[r1, r2].map((r) => (
           <g>

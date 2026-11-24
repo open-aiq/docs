@@ -18,7 +18,7 @@ You'll need:
   board
 
 Here's how it all connects. Pick the breadboard if you're wiring it by hand,
-or Proto2 if you have the carrier board.
+or Proto2 if you have the [carrier board](../../proto2/).
 
 <WiringDiagram />
 
@@ -44,12 +44,10 @@ or Proto2 if you have the carrier board.
   </tbody>
 </table>
 
-Don't skip SET. The firmware uses it to
-[rest the particle sensor](../particle-sensor/) between samples. Left
-unconnected, the sensor runs all the time and wears out sooner. RESET is
-worth wiring too: if the sensor stops sending readings, the firmware pulses
-it low to restart it. Without it, a stuck sensor stays stuck until you power
-the monitor off and on.
+The PMS5003 needs only four wires: TX, RX, VCC and GND. Since firmware
+v0.4.4 it [rests between samples](../particle-sensor/) by UART command, so
+SET and RESET stay unconnected; the sensor pulls them up itself. If your
+breadboard still has them wired to GPIO 8 and 16, that's fine too.
 
 This is the map for the Proto2 carrier board. If you wired a breadboard before
 it, yours probably uses SDA 8, SCL 9, sensor TX 18, sensor RX 17 and buttons 4
@@ -59,7 +57,7 @@ it, yours probably uses SDA 8, SCL 9, sensor TX 18, sensor RX 17 and buttons 4
   pull-up resistors. Most breakouts already have them. If yours don't, add
   4.7 kΩ from SDA and from SCL to 3.3 V, like Proto2's R1 and R2.
 - **PMS5003:** it needs 5 V power, and its UART runs at 9600 baud with 3.3 V
-  logic. Cable and adapter pin orders vary, so wire by the labels.
+  logic. Cable pin orders vary, so wire by the labels.
 - **Status LED:** the firmware sends the same signal to GPIO 48 and 38, so the
   devkit's LED lights on either board revision. Leave both pins free.
 - **Buttons:** wire to ground; the chip's internal pull-ups do the rest.
