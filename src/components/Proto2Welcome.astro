@@ -1,0 +1,441 @@
+---
+// The page the QR code on a Proto2 board opens (/proto2/). It's unlisted: not
+// in the sidebar or search, so it reads as a welcome rather than a doc page.
+import { Icon } from '@astrojs/starlight/components'
+import type { StarlightIcon } from '@astrojs/starlight/types'
+
+const hw = 'https://github.com/open-aiq/hardware'
+const buildReport = `${hw}/issues/new?${new URLSearchParams({
+  title: 'Build report: Proto2 rev I',
+  body: [
+    '**How did it go?**',
+    '',
+    '**What was confusing or broke?**',
+    '',
+    "**What would you change?**",
+    '',
+    '**Photo or readings** (drag images here, if you like)',
+  ].join('\n'),
+})}`
+
+const features: { icon: StarlightIcon; title: string; text: string; href?: string }[] = [
+  { icon: 'analytics', title: 'Measures the air', text: 'A PMS5003 counts PM1.0, PM2.5 and PM10 particles. An SHT30 reads temperature and humidity.' },
+  { icon: 'laptop', title: 'Shows it on the device', text: 'A 1.3 in OLED cycles through AQI, Readings and Network. The status LED glows in the AQI color.' },
+  { icon: 'puzzle', title: 'Three buttons', text: 'Left and right move between screens. Hold pair for 3 s to open Bluetooth pairing.' },
+  { icon: 'padlock', title: 'Sets up from your phone', text: 'The mobile app pairs behind a passkey and hands the monitor your WiFi details.', href: '/dashboard/app/' },
+  { icon: 'rocket', title: 'Updates itself', text: 'New firmware arrives over the air, with rollback if something goes wrong.', href: '/device/ota/' },
+  { icon: 'heart', title: 'Looks after the sensor', text: 'The particle sensor rests between short bursts, so its fan and laser last longer.', href: '/device/particle-sensor/' },
+]
+
+const specs = [
+  ['Hardware release', 'v0.4.8', `${hw}/releases/tag/v0.4.8`],
+  ['Made', 'November 2026'],
+  ['Size', '145.5 × 68 mm, 1.6 mm thick'],
+  ['Copper', 'One layer, on the bottom; holes aren’t plated'],
+  ['Particle sensor', 'PMS5003 on its 4-wire cable (TX RX VCC GND)'],
+  ['Firmware', 'v0.4.4 or newer', 'https://github.com/open-aiq/device/releases/tag/v0.4.4'],
+]
+
+const revisions = [
+  { rev: 'A–D', text: 'The first carrier boards. B went single-sided and added the pair button, C fixed the OLED pin order, D widened the copper.' },
+  { rev: 'E–G', text: 'Moved the PMS5003 to a 2.54 mm socket, added screw holes for it and widened the gap around the ground fill.' },
+  { rev: 'H', text: 'Built for home etching: wider tracks, an even ground fill and a friendlier silkscreen.' },
+  { rev: 'I', text: 'Made for local fabrication. Flat capacitors, and the QR code you scanned.', current: true },
+]
+
+const steps = [
+  { title: 'Get the files', text: 'Gerbers and a printable PDF: schematic, 1:1 copper, assembly guide, parts list and 3D renders.', href: `${hw}/releases/latest`, cta: 'Latest release' },
+  { title: 'Wire it up', text: 'See which pin goes where, on the board or on a breadboard.', href: '/device/hardware/', cta: 'Pin map' },
+  { title: 'Flash the firmware', text: 'Get the monitor running and showing readings.', href: '/device/firmware/', cta: 'Firmware setup' },
+  { title: 'Know every part', text: 'Why each component is there, with datasheet references.', href: `${hw}/blob/main/pcb/proto2/proto2-rationale.pdf`, cta: 'Design rationale' },
+]
+
+const ways: { icon: StarlightIcon; tone: string; title: string; text: string; href: string; cta: string }[] = [
+  { icon: 'comment', tone: 'sage', title: 'Tell us how it went', text: 'What was confusing, what broke, what you’d change. A photo of your board or an odd reading helps too.', href: buildReport, cta: 'Share a build report' },
+  { icon: 'star', tone: 'sun', title: 'Add your air to the map', text: 'Once your monitor is running, you can share its readings on the community map. It stays private until you choose.', href: '/dashboard/privacy/', cta: 'How sharing works' },
+  { icon: 'setting', tone: 'camel', title: 'Improve the board', text: 'The KiCad files are open. Our contributor setup shows how to check your changes.', href: '/contributing/', cta: 'Contributor setup' },
+  { icon: 'pencil', tone: 'berry', title: 'Fix the docs', text: 'Spotted a typo or a step that tripped you up? Every docs page has an edit link at the bottom.', href: 'https://github.com/open-aiq/docs', cta: 'Edit the docs' },
+]
+---
+
+<div class="p2 not-content">
+  <section class="p2-hero" aria-labelledby="p2-title">
+    <div class="p2-hero-text">
+      <p class="p2-eyebrow"><span class="p2-dot" aria-hidden="true"></span> You scanned a Proto2 · Rev I</p>
+      <h1 id="p2-title">Hello, and welcome in. <span aria-hidden="true">💚</span></h1>
+      <p class="p2-lead">
+        Thank you for building an Open AIQ monitor. Proto2 is the board that gets it off the
+        breadboard. Everything is through-hole on one copper layer, so a local shop can make it,
+        you can etch it at home, and you can solder it with a basic iron.
+      </p>
+      <div class="p2-actions">
+        <a class="p2-btn p2-btn-primary" href="#build">Build yours <Icon name="right-arrow" size="1rem" /></a>
+        <a class="p2-btn" href="#join">Join the community <Icon name="heart" size="1rem" /></a>
+      </div>
+    </div>
+
+    <svg class="p2-art" viewBox="0 0 360 240" role="img" aria-label="A Proto2 board with its sensor, buttons and a smiling screen, with fresh air drifting in.">
+      <ellipse class="a-ground" cx="180" cy="214" rx="150" ry="14" />
+      {/* Air drifting into the sensor */}
+      <path class="a-trail" d="M8 70c30-18 52 18 84 2" />
+      <path class="a-trail a-trail-2" d="M4 104c34-14 54 16 90 0" />
+      <circle class="a-mote" r="3"><animateMotion dur="7s" repeatCount="indefinite" path="M8 70c30-18 52 18 84 2" /></circle>
+      <g class="a-float">
+        {/* Board */}
+        <rect class="a-board" x="40" y="44" width="290" height="140" rx="16" />
+        <circle class="a-hole" cx="56" cy="60" r="4" /><circle class="a-hole" cx="314" cy="60" r="4" />
+        <circle class="a-hole" cx="56" cy="168" r="4" /><circle class="a-hole" cx="314" cy="168" r="4" />
+        {/* Particle sensor with its fan */}
+        <rect class="a-part" x="70" y="62" width="96" height="66" rx="10" />
+        <circle class="a-fan" cx="100" cy="95" r="18" />
+        <path class="a-fan-blade" d="M100 81v28M86 95h28" />
+        <rect class="a-vent" x="128" y="78" width="26" height="5" rx="2.5" />
+        <rect class="a-vent" x="128" y="90" width="26" height="5" rx="2.5" />
+        <rect class="a-vent" x="128" y="102" width="26" height="5" rx="2.5" />
+        {/* Devkit */}
+        <rect class="a-devkit" x="186" y="62" width="70" height="104" rx="8" />
+        <rect class="a-chip" x="200" y="74" width="42" height="30" rx="4" />
+        <circle class="a-led" cx="221" cy="146" r="5" />
+        {/* OLED with the one friendly face */}
+        <rect class="a-part" x="270" y="66" width="46" height="46" rx="8" />
+        <rect class="a-screen" x="277" y="73" width="32" height="26" rx="5" />
+        <circle class="a-eye" cx="287" cy="84" r="2" /><circle class="a-eye" cx="299" cy="84" r="2" />
+        <path class="a-smile" d="M285 90c4 5 12 5 16 0" />
+        {/* SHT30 */}
+        <rect class="a-part" x="276" y="124" width="22" height="18" rx="5" />
+        {/* Buttons */}
+        <circle class="a-btn" cx="90" cy="156" r="9" /><circle class="a-btn" cx="118" cy="156" r="9" />
+        <circle class="a-btn a-btn-pair" cx="146" cy="156" r="9" />
+        {/* QR code */}
+        <g class="a-qr">
+          <rect x="276" y="148" width="26" height="26" rx="3" />
+          <path d="M280 152h7v7h-7zM291 152h7v7h-7zM280 163h7v7h-7zM292 164h3v3h-3zM296 168h2v2h-2z" />
+        </g>
+      </g>
+      {/* Sparkles */}
+      <path class="a-spark" d="M330 26l3 8 8 3-8 3-3 8-3-8-8-3 8-3z" />
+      <path class="a-spark a-spark-2" d="M24 170l2 5 5 2-5 2-2 5-2-5-5-2 5-2z" />
+    </svg>
+  </section>
+
+  <div class="p2-ribbon-wrap">
+    <div class="p2-ribbon" aria-hidden="true">
+      {[1, 2, 3, 4, 5, 6].map((n) => <span style={`--c: var(--oa-aqi-${n}-bg)`} />)}
+    </div>
+    <p class="p2-ribbon-caption">The six colors your status LED can glow, from Good to Hazardous.</p>
+  </div>
+
+  <section class="p2-section" aria-labelledby="p2-does">
+    <h2 id="p2-does">What your board does</h2>
+    <div class="p2-grid p2-grid-3">
+      {
+        features.map((f, i) => {
+          const body = (
+            <>
+              <span class="p2-icon" style={`--c: var(--oa-aqi-${(i % 3) + 1}-bg)`}><Icon name={f.icon} size="1.25rem" /></span>
+              <h3>{f.title}</h3>
+              <p>{f.text}</p>
+            </>
+          )
+          return f.href ? <a class="p2-card p2-card-link" href={f.href}>{body}</a> : <div class="p2-card">{body}</div>
+        })
+      }
+    </div>
+  </section>
+
+  <section class="p2-section" aria-labelledby="p2-which">
+    <h2 id="p2-which">Which one do you have?</h2>
+    <p class="p2-sub">The revision is printed on the top, under the buttons. If it says <code>REV I</code>, here’s yours.</p>
+    <div class="p2-rev">
+      <div class="p2-card p2-rev-card">
+        <span class="p2-badge">Rev I · current</span>
+        <dl>
+          {specs.map(([k, v, href]) => (
+            <div><dt>{k}</dt><dd>{href ? <a href={href}>{v}</a> : v}</dd></div>
+          ))}
+        </dl>
+        <p class="p2-note">
+          On firmware v0.4.3 or older, Rev I still works, but the sensor never rests: older firmware
+          sleeps it through the SET pin, which the 4-wire cable doesn’t connect. Monitors that are
+          already set up get the update <a href="/device/ota/">over the air</a>.
+        </p>
+      </div>
+      <ol class="p2-timeline" aria-label="Earlier revisions">
+        {revisions.map((r) => (
+          <li class={r.current ? 'is-current' : ''}>
+            <span class="p2-rev-tag">Rev {r.rev}</span>
+            <p>{r.text}</p>
+          </li>
+        ))}
+      </ol>
+    </div>
+    <p class="p2-sub">
+      Every revision’s notes and files are on the <a href="/releases/">releases page</a>, and the full
+      history is in the <a href={`${hw}/blob/main/pcb/proto2/README.md#revisions`}>Proto2 README</a>.
+    </p>
+  </section>
+
+  <section class="p2-section" id="build" aria-labelledby="p2-build">
+    <h2 id="p2-build">Build one</h2>
+    <ol class="p2-grid p2-grid-4 p2-steps">
+      {steps.map((s, i) => (
+        <li class="p2-card">
+          <span class="p2-step-num" aria-hidden="true">{i + 1}</span>
+          <h3>{s.title}</h3>
+          <p>{s.text}</p>
+          <a class="p2-link" href={s.href}>{s.cta} <Icon name="right-arrow" size="0.9rem" /></a>
+        </li>
+      ))}
+    </ol>
+  </section>
+
+  <section class="p2-join" id="join" aria-labelledby="p2-join">
+    <svg class="p2-join-art" viewBox="0 0 220 90" aria-hidden="true">
+      <path class="j-trail" d="M40 56c40-36 100-36 140 0" />
+      <circle class="j-person" cx="40" cy="56" r="16" style="--c: var(--oa-aqi-1-bg)" />
+      <circle class="j-person" cx="110" cy="30" r="16" style="--c: var(--oa-aqi-2-bg)" />
+      <circle class="j-person" cx="180" cy="56" r="16" style="--c: var(--oa-aqi-3-bg)" />
+      <path class="j-heart" d="M110 70c-6-6-12-9-12-15a6 6 0 0 1 12-2 6 6 0 0 1 12 2c0 6-6 9-12 15z" />
+    </svg>
+    <h2 id="p2-join">You’re part of this now</h2>
+    <p class="p2-join-lead">
+      Open AIQ is open source, and every board gets better because someone tried it and told us what
+      happened. You don’t need to be an engineer to help. Pick whatever feels right.
+    </p>
+    <div class="p2-grid p2-grid-2">
+      {ways.map((w) => (
+        <a class={`p2-card p2-card-link p2-way p2-tone-${w.tone}`} href={w.href}>
+          <span class="p2-way-icon"><Icon name={w.icon} size="1.35rem" /></span>
+          <h3>{w.title}</h3>
+          <p>{w.text}</p>
+          <span class="p2-link">{w.cta} <Icon name="right-arrow" size="0.9rem" /></span>
+        </a>
+      ))}
+    </div>
+    <div class="p2-actions p2-actions-center">
+      <a class="p2-btn p2-btn-primary" href="https://github.com/open-aiq"><Icon name="github" size="1rem" /> Say hello on GitHub</a>
+      <a class="p2-btn" href="/project-status/">See what we’re building next</a>
+      <a class="p2-btn" href="/">Explore the docs</a>
+    </div>
+  </section>
+
+  <p class="p2-thanks">Thanks for caring for the air we all breathe. <span aria-hidden="true">🌱</span></p>
+</div>
+
+<style>
+  /* This page draws its own title in the hero, so hide Starlight's. */
+  :global(.content-panel:has(+ .content-panel .p2)) { display: none; }
+
+  .p2 {
+    --p2-raised: var(--oa-raised);
+    --p2-border: var(--oa-outline-variant);
+    --p2-muted: var(--oa-on-surface-variant);
+    --p2-text: var(--oa-on-surface);
+    color: var(--p2-text);
+    display: grid;
+    gap: clamp(2.5rem, 6vw, 4rem);
+    padding-block: 0.5rem 1rem;
+  }
+  .p2 h2 { font-size: var(--sl-text-h2); font-weight: 650; letter-spacing: -0.02em; margin: 0 0 1rem; color: var(--p2-text); }
+  .p2 h3 { font-size: 1rem; font-weight: 600; margin: 0.75rem 0 0.25rem; color: var(--p2-text); }
+  .p2 p { margin: 0; line-height: 1.6; }
+  .p2 a:not(.p2-btn, .p2-card-link) { color: var(--sl-color-text-accent); }
+  .p2 code { font-size: 0.85em; padding: 0.1em 0.4em; border-radius: 0.35rem; background: var(--oa-surface-container-high); }
+
+  /* Hero */
+  .p2-hero {
+    display: grid;
+    gap: 1.5rem;
+    align-items: center;
+    padding: clamp(1.5rem, 5vw, 3rem);
+    border-radius: var(--oa-radius-card);
+    border: 1px solid var(--p2-border);
+    background:
+      radial-gradient(circle at 8% 12%, color-mix(in srgb, var(--oa-accent) 20%, transparent), transparent 40%),
+      radial-gradient(circle at 92% 88%, color-mix(in srgb, var(--oa-sage) 22%, transparent), transparent 42%),
+      var(--p2-raised);
+    box-shadow: var(--oa-shadow-rest);
+  }
+  @media (min-width: 52rem) { .p2-hero { grid-template-columns: 1.1fr 1fr; } }
+  .p2-hero h1 {
+    font-size: clamp(2rem, 1.2rem + 3.6vw, 3.25rem);
+    line-height: 1.08;
+    letter-spacing: -0.035em;
+    font-weight: 700;
+    margin: 0.75rem 0 1rem;
+    color: var(--p2-text);
+  }
+  .p2-eyebrow {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    padding: 0.3rem 0.8rem; border-radius: 999px;
+    font-size: 0.8125rem; font-weight: 600;
+    background: color-mix(in srgb, var(--oa-sage) 16%, transparent);
+    color: var(--oa-on-secondary-container);
+  }
+  :global(:root[data-theme='dark']) .p2-eyebrow { color: var(--oa-sage); }
+  .p2-dot { width: 0.5rem; height: 0.5rem; border-radius: 50%; background: var(--oa-online); animation: p2-glow 2.8s ease-in-out infinite; }
+  .p2-lead { font-size: 1.0625rem; color: var(--p2-muted); max-width: 36rem; }
+  .p2-art { width: 100%; height: auto; overflow: visible; }
+
+  /* Buttons */
+  .p2-actions { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1.5rem; }
+  .p2-actions-center { justify-content: center; }
+  .p2-btn {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    padding: 0.7rem 1.25rem; border-radius: 999px;
+    font-weight: 600; font-size: 0.9375rem; text-decoration: none;
+    color: var(--p2-text);
+    background: var(--p2-raised);
+    border: 1px solid var(--oa-outline);
+    transition: transform var(--oa-duration-lift) var(--oa-ease), box-shadow var(--oa-duration-lift) var(--oa-ease);
+  }
+  .p2-btn-primary { background: var(--oa-primary); color: var(--oa-on-primary); border-color: transparent; }
+  .p2-btn:hover { transform: translateY(-2px); box-shadow: var(--oa-shadow-lift); }
+
+  /* AQI ribbon */
+  .p2-ribbon { display: grid; grid-template-columns: repeat(6, 1fr); gap: 0.4rem; margin-bottom: 0.6rem; }
+  .p2-ribbon span { height: 0.6rem; border-radius: 999px; background: var(--c); }
+  .p2-ribbon-caption { text-align: center; font-size: 0.8125rem; color: var(--p2-muted); }
+
+  /* Cards */
+  .p2-grid { display: grid; gap: 1rem; padding: 0; margin: 0; list-style: none; }
+  @media (min-width: 40rem) {
+    .p2-grid-2, .p2-grid-3, .p2-grid-4 { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (min-width: 64rem) {
+    .p2-grid-3 { grid-template-columns: repeat(3, 1fr); }
+    .p2-grid-4 { grid-template-columns: repeat(4, 1fr); }
+  }
+  .p2-card {
+    display: flex; flex-direction: column;
+    padding: 1.25rem 1.35rem;
+    border-radius: var(--oa-radius-card);
+    border: 1px solid var(--p2-border);
+    background: var(--p2-raised);
+    box-shadow: var(--oa-shadow-rest);
+    color: var(--p2-text);
+    text-decoration: none;
+    transition: transform var(--oa-duration-lift) var(--oa-ease), box-shadow var(--oa-duration-lift) var(--oa-ease);
+  }
+  .p2-card p { color: var(--p2-muted); font-size: 0.9375rem; }
+  .p2-card-link:hover, .p2-card-link:focus-visible { transform: translateY(-3px); box-shadow: var(--oa-shadow-lift); }
+  .p2-icon {
+    display: grid; place-items: center; width: 2.5rem; height: 2.5rem; border-radius: 0.9rem;
+    background: color-mix(in srgb, var(--c) 30%, transparent);
+    color: var(--p2-text);
+  }
+  .p2-sub { color: var(--p2-muted); margin-top: 1rem !important; }
+  .p2-section > .p2-sub:first-of-type { margin: -0.5rem 0 1.25rem !important; }
+
+  /* Revision */
+  .p2-rev { display: grid; gap: 1.5rem; }
+  @media (min-width: 52rem) { .p2-rev { grid-template-columns: 1.2fr 1fr; align-items: start; } }
+  .p2-badge {
+    align-self: flex-start; padding: 0.25rem 0.75rem; border-radius: 999px;
+    font-size: 0.8125rem; font-weight: 600;
+    background: var(--oa-tertiary-container); color: var(--oa-on-tertiary-container);
+  }
+  .p2-rev-card dl { margin: 1rem 0; display: grid; gap: 0; }
+  .p2-rev-card dl > div {
+    display: grid; grid-template-columns: 9rem 1fr; gap: 0.75rem;
+    padding: 0.55rem 0; border-bottom: 1px dashed var(--p2-border);
+  }
+  .p2-rev-card dt { color: var(--p2-muted); font-size: 0.875rem; }
+  .p2-rev-card dd { margin: 0; font-size: 0.9375rem; }
+  .p2-note { font-size: 0.875rem !important; }
+  @media (max-width: 30rem) { .p2-rev-card dl > div { grid-template-columns: 1fr; gap: 0.1rem; } }
+
+  .p2-timeline { list-style: none; margin: 0; padding: 0 0 0 1.5rem; position: relative; display: grid; gap: 1.1rem; }
+  .p2-timeline::before {
+    content: ''; position: absolute; left: 0.45rem; top: 0.5rem; bottom: 0.5rem;
+    border-left: 3px dotted color-mix(in srgb, var(--p2-muted) 45%, transparent);
+  }
+  .p2-timeline li { position: relative; }
+  .p2-timeline li::before {
+    content: ''; position: absolute; left: -1.4rem; top: 0.3rem; width: 0.8rem; height: 0.8rem; border-radius: 50%;
+    background: var(--oa-wood); border: 2px solid var(--p2-raised);
+  }
+  .p2-timeline li.is-current::before { background: var(--oa-highlight); animation: p2-glow 3.5s ease-in-out infinite; }
+  .p2-rev-tag { font-weight: 650; font-size: 0.9375rem; }
+  .p2-timeline p { color: var(--p2-muted); font-size: 0.875rem; }
+
+  /* Steps */
+  .p2-steps .p2-card { position: relative; }
+  .p2-step-num {
+    display: grid; place-items: center; width: 2rem; height: 2rem; border-radius: 50%;
+    font-weight: 700; font-size: 0.9375rem;
+    background: var(--oa-primary-container); color: var(--oa-on-primary-container);
+  }
+  .p2-link { display: inline-flex; align-items: center; gap: 0.35rem; margin-top: auto; padding-top: 0.9rem; font-weight: 600; font-size: 0.9rem; color: var(--sl-color-text-accent); }
+
+  /* Join */
+  .p2-join {
+    text-align: center;
+    padding: clamp(1.5rem, 5vw, 3rem);
+    border-radius: var(--oa-radius-card);
+    background:
+      radial-gradient(circle at 90% 10%, color-mix(in srgb, var(--oa-highlight) 26%, transparent), transparent 40%),
+      radial-gradient(circle at 10% 90%, color-mix(in srgb, var(--oa-sage) 24%, transparent), transparent 45%),
+      var(--oa-surface-container-low);
+    border: 1px solid var(--p2-border);
+  }
+  .p2-join h2 { font-size: clamp(1.6rem, 1.2rem + 2vw, 2.25rem); }
+  .p2-join-lead { color: var(--p2-muted); max-width: 38rem; margin: 0 auto 2rem !important; font-size: 1.0625rem; }
+  .p2-join .p2-card { text-align: left; }
+  .p2-join-art { width: min(220px, 60%); height: auto; margin: 0 auto 0.5rem; display: block; }
+  .p2-way { border-top: 4px solid var(--tone); }
+  .p2-way-icon {
+    display: grid; place-items: center; width: 2.75rem; height: 2.75rem; border-radius: 1rem;
+    background: color-mix(in srgb, var(--tone) 22%, transparent); color: var(--p2-text);
+  }
+  .p2-tone-sage { --tone: var(--oa-sage); }
+  .p2-tone-sun { --tone: var(--oa-highlight); }
+  .p2-tone-camel { --tone: var(--oa-accent); }
+  .p2-tone-berry { --tone: var(--oa-aqi-4-bg); }
+
+  .p2-thanks { text-align: center; font-size: 1.125rem; font-weight: 600; color: var(--p2-muted); }
+
+  /* Illustration */
+  .a-ground { fill: var(--oa-ground); }
+  .a-board { fill: var(--oa-sage); stroke: color-mix(in srgb, var(--oa-sage) 70%, var(--oa-ink)); stroke-width: 2.5; }
+  .a-hole { fill: var(--p2-raised); opacity: 0.8; }
+  .a-part { fill: var(--oa-sand); stroke: var(--oa-wood); stroke-width: 2.5; stroke-linejoin: round; }
+  .a-fan { fill: none; stroke: var(--oa-wood); stroke-width: 2.5; }
+  .a-fan-blade { stroke: var(--oa-wood); stroke-width: 2.5; stroke-linecap: round; transform-box: fill-box; transform-origin: center; }
+  .a-vent { fill: var(--oa-wood); opacity: 0.6; }
+  .a-devkit { fill: color-mix(in srgb, var(--oa-ink) 82%, var(--oa-sage)); }
+  .a-chip { fill: color-mix(in srgb, var(--oa-sand) 25%, var(--oa-ink)); stroke: var(--oa-wood); stroke-width: 1.5; }
+  .a-led { fill: var(--oa-aqi-1-bg); animation: p2-led 12s ease-in-out infinite; }
+  .a-screen { fill: color-mix(in srgb, var(--oa-sage) 55%, var(--oa-ink)); }
+  .a-eye { fill: #fff; }
+  .a-smile { fill: none; stroke: #fff; stroke-width: 2; stroke-linecap: round; }
+  .a-btn { fill: var(--oa-sand); stroke: var(--oa-wood); stroke-width: 2.5; }
+  .a-btn-pair { fill: var(--oa-highlight); }
+  .a-qr rect { fill: #fff; stroke: var(--oa-wood); stroke-width: 1.5; }
+  .a-qr path { fill: var(--oa-ink); }
+  :global(:root[data-theme='dark']) .a-qr path { fill: #3b2716; }
+  .a-trail, .j-trail { fill: none; stroke: color-mix(in srgb, var(--p2-muted) 55%, transparent); stroke-width: 3; stroke-dasharray: 1 8; stroke-linecap: round; }
+  .a-mote { fill: var(--oa-accent); }
+  .a-spark { fill: var(--oa-highlight); transform-box: fill-box; transform-origin: center; animation: p2-twinkle 5s ease-in-out infinite; }
+  .a-spark-2 { animation-delay: 2.5s; }
+  .a-float { animation: p2-float 7s ease-in-out infinite; }
+  .j-person { fill: color-mix(in srgb, var(--c) 70%, var(--oa-sand)); stroke: var(--oa-wood); stroke-width: 2.5; }
+  .j-heart { fill: var(--oa-aqi-4-bg); transform-box: fill-box; transform-origin: center; animation: p2-glow 4s ease-in-out infinite; }
+
+  @keyframes p2-float { 50% { transform: translateY(-4px); } }
+  @keyframes p2-glow { 0%, 100% { opacity: 0.35; } 50% { opacity: 1; } }
+  @keyframes p2-twinkle { 0%, 100% { opacity: 0.25; transform: scale(0.7); } 50% { opacity: 1; transform: scale(1); } }
+  /* The LED drifts slowly through the AQI colors. */
+  @keyframes p2-led {
+    0%, 100% { fill: var(--oa-aqi-1-bg); }
+    20% { fill: var(--oa-aqi-2-bg); }
+    40% { fill: var(--oa-aqi-3-bg); }
+    60% { fill: var(--oa-aqi-4-bg); }
+    80% { fill: var(--oa-aqi-5-bg); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .p2 *, .p2 *::before { animation: none !important; transition: none !important; }
+    .a-mote { display: none; }
+  }
+</style>

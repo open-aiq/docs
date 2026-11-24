@@ -59,7 +59,6 @@ export default defineConfig({
           label: "Build a device",
           items: [
             { label: "Hardware and pin map", link: "/device/hardware/" },
-            { label: "Proto2 board", link: "/proto2/" },
             { label: "The particle sensor", link: "/device/particle-sensor/" },
             { label: "Firmware setup", link: "/device/firmware/" },
             { label: "BLE provisioning", link: "/device/ble/" },
